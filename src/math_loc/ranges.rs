@@ -15,7 +15,7 @@ impl FloatingPointRange {
 
     pub fn calc_steps(start: f64, end: f64, step: f64) -> f64 {
         return ((end - start) / step).abs();
-    } 
+    }
 
     pub fn new(start: f64, end: f64, step: f64) -> FloatingPointRange {
         return FloatingPointRange {
@@ -41,4 +41,3 @@ impl Iterator for FloatingPointRange {
         }
     }
 }
-
