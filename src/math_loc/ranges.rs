@@ -1,5 +1,5 @@
 #[allow(dead_code)]
-pub struct FloatingPointRange {
+pub struct F64Range {
     start: f64,
     end: f64,
     step: f64,
@@ -8,7 +8,7 @@ pub struct FloatingPointRange {
 }
 
 #[allow(dead_code)]
-impl FloatingPointRange {
+impl F64Range {
     pub fn calc_steps_rounded(start: f64, end: f64, step: f64) -> u64 {
         return ((end - start) / step).abs().round() as u64;
     }
@@ -17,8 +17,8 @@ impl FloatingPointRange {
         return ((end - start) / step).abs();
     }
 
-    pub fn new(start: f64, end: f64, step: f64) -> FloatingPointRange {
-        return FloatingPointRange {
+    pub fn new(start: f64, end: f64, step: f64) -> F64Range {
+        return F64Range {
             start: start,
             end: end,
             step: step,
@@ -28,7 +28,7 @@ impl FloatingPointRange {
     }
 }
 
-impl Iterator for FloatingPointRange {
+impl Iterator for F64Range {
     type Item = f64;
 
     fn next(&mut self) -> Option<Self::Item> {
