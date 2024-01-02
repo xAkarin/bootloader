@@ -1,9 +1,17 @@
  bits 16
+ ; boot drive stored from dl
+ mov [BOOT_DRIVE], dl 
+ ; org where its loaded or smth aaaaaaaa
  org 0x7c00 
- bootmain:
-    mov bp, 0x9000
-    mov sp, bp
+
+ ; setup stack I guess or something fucking stupid annoying fuck you
+mov bp, 0x9000
+mov sp, bp
+
+bootmain:
+    ; call boot clear screen
     call bcls 
+    ; call boot print *example text*
     mov si, example
     call bprint
     jmp halt 
@@ -30,5 +38,6 @@ bcls:
     ret
 
 example: db "example", 0
+BOOT_DRIVE: db 0 
 times 510 - ($-$$) db 0
 dw 0xaa55
