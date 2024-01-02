@@ -15,15 +15,17 @@ bootmain:
     mov si, example
     call bprint
 
+; TODO: do in a higher level language imho
+; https://notes.eatonphil.com/bootloader-basics.html
 ; keyboard input loop
-.kbi_loop: 
-    mov ah, 0x00
-    int 0x16
-
-    mov ah, 0x0e
-    int 0x10
-
-    jmp .kbi_loop
+;.kbi_loop: 
+;    mov ah, 0x00
+;    int 0x16
+;
+;    mov ah, 0x0e
+;    int 0x10
+;
+;    jmp .kbi_loop
 
 ; boot print
 bprint: 
