@@ -1,16 +1,13 @@
  bits 16
-
- org 0x07c00 
-
+ org 0x7c00 
  bootmain:
     mov bp, 0x9000
     mov sp, bp
-
+    call bcls 
     mov si, example
     call bprint
+    jmp halt 
 
-   jmp halt 
-    
 halt: 
     jmp halt
 
@@ -23,10 +20,15 @@ bprint:
     int 0x10
     jmp bprint
 .ret:
-    jmp halt 
+    ret 
 
-example: db "Hello World", 0
+bcls: 
+    mov ah, 0x00
+    mov al, 0x03
+    int 0x10
+.ret: 
+    ret
 
+example: db "example", 0
 times 510 - ($-$$) db 0
-
 dw 0xaa55
