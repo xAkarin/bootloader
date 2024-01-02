@@ -14,7 +14,7 @@ bootmain:
     ; call boot print *example text*
     mov si, example
     call bprint
-    
+
 ; keyboard input loop
 .kbi_loop: 
     mov ah, 0x00
@@ -25,6 +25,7 @@ bootmain:
 
     jmp .kbi_loop
 
+; boot print
 bprint: 
     cld  
     mov ah, 0x0e
@@ -36,6 +37,7 @@ bprint:
 .ret:
     ret 
 
+; boot clear screen
 bcls: 
     mov ah, 0x00
     mov al, 0x03
