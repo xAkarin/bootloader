@@ -14,10 +14,16 @@ bootmain:
     ; call boot print *example text*
     mov si, example
     call bprint
-    jmp halt 
+    
+; keyboard input loop
+.kbi_loop: 
+    mov ah, 0x00
+    int 0x16
 
-halt: 
-    jmp halt
+    mov ah, 0x0e
+    int 0x10
+
+    jmp .kbi_loop
 
 bprint: 
     cld  
