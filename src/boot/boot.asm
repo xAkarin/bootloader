@@ -1,53 +1,18 @@
- bits 16
- ; boot drive stored from dl
- mov [BOOT_DRIVE], dl 
- ; org where its loaded or smth aaaaaaaa
- org 0x7c00 
+bits 16
 
- ; setup stack I guess or something fucking stupid annoying fuck you
-mov bp, 0x9000
-mov sp, bp
+org 0x7c00
 
-bootmain:
-    ; call boot clear screen
-    call bcls 
-    ; call boot print *example text*
-    mov si, example
-    call bprint
+xor ax, ax
+mov cs, ax
+mov ss, ax
+mov sp, ax
+mov ds, ax
 
-; TODO: do in a higher level language imho
-; https://notes.eatonphil.com/bootloader-basics.html
-; keyboard input loop
-;.kbi_loop: 
-;    mov ah, 0x00
-;    int 0x16
-;
-;    mov ah, 0x0e
-;    int 0x10
-;
-;    jmp .kbi_loop
+push 'a'
 
-; boot print
-bprint: 
-    cld  
-    mov ah, 0x0e
-    lodsb 
-    or al, al
-    jz .ret
-    int 0x10
-    jmp bprint
-.ret:
-    ret 
+mov ax, [sp]
 
-; boot clear screen
-bcls: 
-    mov ah, 0x00
-    mov al, 0x03
-    int 0x10
-.ret: 
-    ret
+int 0x10
 
-example: db "example", 0
-BOOT_DRIVE: db 0 
-times 510 - ($-$$) db 0
+times 510 - ($ - $$) db 0
 dw 0xaa55
