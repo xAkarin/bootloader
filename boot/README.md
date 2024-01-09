@@ -17,6 +17,9 @@
 
 # Verifying that the stack grows downwards: 
 ```asm
+;
+; assume that ss = 0 and that sp = 0x7c00 (so that the stack grows bellow our bootloader)
+;
 verify:
     push 'a'
     mov al, [0x7bfe] ; verifying the stack grows downwards
