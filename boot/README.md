@@ -24,9 +24,9 @@ verify:
     push 'a'
     mov al, [0x7bfe] ; verifying the stack grows downwards
     cmp al, 'a'
-    je .int
+    je .intd
     jmp .end
-.int:
+.intd:
     int 0x10 ; should fall through into end
 .end:
     pop ax   ; pop value off the stack into ax and zero it
