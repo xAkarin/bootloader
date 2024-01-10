@@ -40,6 +40,7 @@
 12. https://stackoverflow.com/questions/14060411/x86-where-stack-pointer-points
 13. https://stackoverflow.com/questions/7279311/difference-between-bx-and-bp
 14. https://en.wikibooks.org/wiki/X86_Assembly/16,_32,_and_64_Bits
+15. CLD: https://en.wikipedia.org/wiki/Direction_flag
 
 # Verifying that the stack grows downwards: 
 ```asm

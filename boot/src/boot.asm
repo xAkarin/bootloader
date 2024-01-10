@@ -10,19 +10,15 @@ start:
     mov ds, ax
     mov bp, sp
 
+    cld ; ensure that incrementing an address increases it (direction bit = 0) 
+
     mov si, msg
     call print 
 
-print:
-    mov ah, 0x0e 
-.loop: 
-    cmp byte [si], 0 ; this is legal??? 
-    je .end
-    mov al, [si]
-    int 0x10
-    inc si 
-    jmp .loop  
-.end: 
+;.hlt:
+;    jmp .hlt
+
+%include "print.asm" 
 
 %define ENDL 0x0d, 0x0a
 msg: 
