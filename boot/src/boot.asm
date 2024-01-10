@@ -10,19 +10,23 @@ start:
     mov ds, ax
     mov bp, sp
 
-    mov ah, 0x0e
+    mov si, msg
+    call print 
 
-verify:
-    push 'a'
-    mov al, [0x7bfe] ; verifying the stack grows downwards
-    cmp al, 'a'
-    je .int
-    jmp .end
-.int:
-    int 0x10 ; should fall through into end
-.end:
-    pop ax   ; pop value off the stack into ax and zero it
-    xor ax, ax 
+print:
+    mov ah, 0x0e 
+.loop: 
+    cmp byte [si], 0 ; this is legal??? 
+    je .end
+    mov al, [si]
+    int 0x10
+    inc si 
+    jmp .loop  
+.end: 
+
+%define ENDL 0x0d, 0x0a
+msg: 
+    db "[!] MESSAGE", ENDL, 0 
 
 times 510 - ($ - $$) db 0
 dw 0xaa55   

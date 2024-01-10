@@ -1,4 +1,4 @@
-## Reasources: 
+# Reasources: 
 
 1. https://stackoverflow.com/questions/33603842/how-to-make-the-kernel-for-my-bootloader
 2. https://wiki.osdev.org/Rolling_Your_Own_Bootloader
@@ -22,15 +22,17 @@
 ;
 verify:
     push 'a'
-    mov al, [0x7bfe] ; verifying the stack grows downwards
-    cmp al, 'a'
-    je .intd
+    mov bl, [0x7bfe] ; verifying the stack grows downwards
+    cmp bl, 'a'
+    je .ok
     jmp .end
-.intd:
-    int 0x10 ; should fall through into end
+.ok:
+    mov al, 'O'
+    int 0x10 
+    mov al, 'K'
+    int 0x10 
+    ; should fall through into end
 .end:
-    pop ax   ; pop value off the stack into ax and zero it
-    xor ax, ax
 ```
 
 
