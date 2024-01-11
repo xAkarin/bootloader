@@ -41,6 +41,8 @@
 13. https://stackoverflow.com/questions/7279311/difference-between-bx-and-bp
 14. https://en.wikibooks.org/wiki/X86_Assembly/16,_32,_and_64_Bits
 15. CLD: https://en.wikipedia.org/wiki/Direction_flag
+16. https://github.com/klange/toaruos/blob/master/boot/boot.S
+17.  POSSIBLE HOLY GRAIL OF INFORMATION BRIGHTSHARD READ THIS: **https://independent-software.com/operating-system-development.html**
 
 # Verifying that the stack grows downwards: 
 ```asm
