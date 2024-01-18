@@ -18,6 +18,8 @@
     int 0x10
 .endm
 
+.type _check_call, @function /* does nothing :( */ 
+
 _start:
     jmp _main /* For some reason ljmp makes the bootloader bug out */
 
@@ -37,16 +39,24 @@ _main:
     
     cld /* Change the direction bit to 0 (go forward in memory when dealing with strings)*/
 
-    xor ax, ax
+    /*xor ax, ax*/
+    mov ax, 0x7c00 /* It works the exact SAAAAAAAAAAAAAAAAAAAAME WHYYYYYYYYYYYYY */
     mov ss, ax 
     mov sp, 0x7c00
     mov es, ax /* Not clearing this segment breaks the fucking bootloader GOD WHY IS GAS SO FUCKING ASSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS THIS DOESNT HAPPEN IN NASM FUCKING MORASDAASDASDa */
     mov ds, ax
-    
+    mov fs, ax
+    mov gs, ax
+
+/* TODO: explore setting CS manually like this
+    mov cs, (ax + _set_cs)
+_set_cs: 
+*/ 
+
     /* Ensuring that it actually jumped to the main */
     SANITY_CHECK 
 
-    mov si, _boot_msg
+    /*mov si, _boot_msg*/
     /* TODO: for some retarded reason "call" just fucking dies and doesn't work */
     call _check_call
 
@@ -86,7 +96,7 @@ _print_done:
 /* A function for debugging to see if call is working :) god I hate the people who made GAS */
 _check_call: 
     SANITY_CHECK
-    ret 
+    ret
 
 _boot_msg: .asciz "Boot Message\n"
 
