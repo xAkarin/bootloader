@@ -2,6 +2,7 @@
 .global _start 
 .section .text 
 
+/* This is a form of debugging macro, just used to ensure that the program flow is correct */
 .macro SANITY_CHECK
     mov $0x0e, %ah 
     mov $'[', %al 
@@ -44,12 +45,29 @@ _main:
     /* Test that the call instruction works (I had a bug previously where it did not) */
     call _test_call
 
+    mov $_bootloader_hello_world, %si 
+    call _print
+
     jmp .
 
 /* This labels serves the purpose to check that the call instruction properly works */ 
 _test_call:
     SANITY_CHECK
+    ret
+
+_print:
+    mov $0x0e, %ah 
+_print_loop: 
+    lodsb 
+    cmp $0, %al 
+    je _print_done
+    int $0x10 
+    jmp _print_loop
+_print_done: 
     ret 
+
+_bootloader_hello_world: 
+    .asciz "Bootloader Hello World!\n\r"
 
 .org 510 
 .word 0xaa55 
