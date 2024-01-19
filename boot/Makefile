@@ -10,10 +10,10 @@ gas:
 linker: gas 
 	ld -o ./build/boot.out -Ttext 0x7c00 ./build/boot.o 
 
-strip: linker 
-	objcopy -O binary -j .text ./build/boot.out ./build/boot.bin
+objcopy: linker 
+	objcopy -O binary --only-section=.text ./build/boot.out ./build/boot.bin
 
-qemu: strip
+qemu: objcopy
 	qemu-system-x86_64 -drive format=raw,file=./build/boot.bin
 
 run: qemu
