@@ -23,7 +23,7 @@ _start:
     /* Ensure that the bootloader is actually running from the correct address */ 
     SANITY_CHECK
 
-    /* This jump will 0 the code segment that way when calling a label the address will be cs:ip */
+    /* This jump will 0 the code segment that way when calling a label the address will be (0 * 16):(+ offset) */
     ljmp $0, $_main
 
     /* The code jumps over this, this ensures that the ljmp actually occured and we did not fall into _main */
@@ -55,19 +55,30 @@ _test_call:
     SANITY_CHECK
     ret
 
-_print:
+/* Bootloader print message */
+_print: 
+    /* ensure we are in teletype mode */ 
     mov $0x0e, %ah 
 _print_loop: 
+    /* Load byte at memory address in %si, into %al then increment %si by 1 byte */
     lodsb 
+    /* Compare %al to $0 (null) */
     cmp $0, %al 
+    /* If (%al == NULL){ jmp _print_done } */
     je _print_done
+    /* else { use 0x10 interupt to print value in al to screen }*/ 
     int $0x10 
+    /* Loop */
     jmp _print_loop
-_print_done: 
+_print_done:
+    /* Return to the address that was pushed onto the stack by the call instruction */
     ret 
 
+/* Bootloader hello world message to test if the print function is working */
 _bootloader_hello_world: 
     .asciz "Bootloader Hello World!\n\r"
 
+/* Pad the binary with bytes until it is 510 bytes in size */
 .org 510 
+/* Then add the magical MBR word value to the end of the binary making it 512 bytes and bootable */
 .word 0xaa55 
