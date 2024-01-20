@@ -8,7 +8,7 @@ gas:
 	#	-mlittle-endian
 
 linker: gas 
-	ld -o ./build/boot.out -Ttext 0x7c00 ./build/boot.o 
+	ld -o ./build/boot.out -T linker.ld ./build/boot.o 
 
 objcopy: linker 
 	objcopy -O binary --only-section=.text ./build/boot.out ./build/boot.bin

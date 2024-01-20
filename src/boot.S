@@ -37,23 +37,21 @@ _main:
     xor %ax, %ax 
     mov %ax, %ds 
     mov %ax, %es 
-    mov %ax, %ss 
+    mov %ax, %ss
 
-    /* Set the stack pointer to our bootloader address (the stack grows downward from here) */ 
-    mov $0x7c00, %sp 
+    /* TODO: remember why I have to do this? */
+    /* Move the boot drive number into a variable to ensure I don't lose it */
+    mov %di, (_numer_of_boot_drive)
 
-    /* Test that the call instruction works (I had a bug previously where it did not) */
-    call _test_call
+    /* Set the stack pointer to our bootloader address (the stack grows downward from here and should be growing down by 16 bits) */ 
+    mov $0x7c00, %sp
+    /* Set the stack base pointer to the stack pointer (both should originally point at whatever value is stored in sp) */ 
+    mov %sp, %bp
 
     mov $_bootloader_hello_world, %si 
     call _print
 
     jmp .
-
-/* This labels serves the purpose to check that the call instruction properly works */ 
-_test_call:
-    SANITY_CHECK
-    ret
 
 /* Bootloader print message */
 _print: 
@@ -77,6 +75,9 @@ _print_done:
 /* Bootloader hello world message to test if the print function is working */
 _bootloader_hello_world: 
     .asciz "Bootloader Hello World!\n\r"
+
+_numer_of_boot_drive: .word 0 
+
 
 /* Pad the binary with bytes until it is 510 bytes in size */
 .org 510 
