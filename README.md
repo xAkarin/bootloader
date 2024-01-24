@@ -44,27 +44,5 @@
 16. https://github.com/klange/toaruos/blob/master/boot/boot.S
 17.  POSSIBLE HOLY GRAIL OF INFORMATION BRIGHTSHARD READ THIS: **https://independent-software.com/operating-system-development.html**
 
-# Verifying that the stack grows downwards: 
-```asm
-;
-; assume that ss = 0 and that sp = 0x7c00 (so that the stack grows bellow our bootloader)
-;
-verify:
-    push 'a'
-    mov bl, [0x7bfe] ; verifying the stack grows downwards
-    cmp bl, 'a'
-    je .ok
-    jmp .end
-.ok:
-    mov al, 'O'
-    int 0x10 
-    mov al, 'K'
-    int 0x10 
-    ; should fall through into end
-.end:
-```
-
-
-
 
 
