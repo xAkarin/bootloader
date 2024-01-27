@@ -55,6 +55,8 @@ _main:
     mov $_bootloader_hello_world, %si 
     call _print
 
+    call _check_int13h_extension
+
     call _read_from_disk 
 
     jmp .
@@ -102,6 +104,33 @@ _print_done:
   Also TODO: what the fuck does this mean? 
 
 */
+
+/* a label to check if the CPU supports 13h extensions for disk addressing? 
+SUPER USEFUL https://handwiki.org/wiki/INT_13H#List_of_INT_13h_services
+*/
+_check_int13h_extension:
+  /* Move this to test whether extensions are available */
+  mov $0x41, %ah
+  /* Another magic number for checking if the extensions are supported I think */
+  mov $0x55aa, %bx
+  /* This is the DEFAULT HARD DRIVE, NOT FLOPPY DISK */
+  mov $0x80, %dl 
+  /* Call the interupt to call the bios function */
+  int $0x13 
+
+  /* the carry flag is set if int 0x13 extensions are not available */
+  jc _check_int13h_extension_error
+
+  /* Else just return */
+  jmp _check_int13h_extension_done
+
+_check_int13h_extension_error:
+  mov $_int13h_err_msg, %si 
+  call _print 
+  ret
+
+_check_int13h_extension_done:
+  ret 
 
 /* This is meant to be my read from disk function but currently it just throws and error or something idk */
 _read_from_disk: 
@@ -157,6 +186,9 @@ _read_from_disk_error:
 _bootloader_hello_world: 
     .asciz "Bootloader Hello World!\n\r"
 
+_int13h_err_msg:
+  .asciz "int 0x13 extensions are not supported!\n\r"
+
 _bootloader_disk_ok: 
   .asciz "[~] loaded disk without error or something :)\n\r"
 
@@ -182,4 +214,4 @@ _numer_of_boot_drive: .word 0
 
    LMAO ITS 4 GIGS IN SIZE NOW AND TOOK LIKE 10 SECONDS TO ASSEMBLE FUUUUUUUUUUUUUUUUUUUUUUUUUUUUCK
 */
-.org 0xffffffff 
+
