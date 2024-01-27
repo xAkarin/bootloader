@@ -41,24 +41,42 @@ _main:
     mov %ax, %ds 
     mov %ax, %es 
     mov %ax, %ss
-
-    /* TODO: remember why I have to do this? */
-    /* Move the boot drive number into a variable to ensure I don't lose it */
-    /* This should default to 0x0 based off of what I've read, however I don't beleive that to be the case */
-    mov %di, (_numer_of_boot_drive)
-
     /* Set the stack pointer to our bootloader address (the stack grows downward from here and should be growing down by 16 bits) */ 
     mov $0x7c00, %sp
     /* Set the stack base pointer to the stack pointer (both should originally point at whatever value is stored in sp) */ 
     mov %sp, %bp
+
+    /* So actually this is useless I think */
+    /* TODO: remember why I have to do this? */
+    /* Move the boot drive number into a variable to ensure I don't lose it */
+    /* This should default to 0x0 based off of what I've read, however I don't beleive that to be the case */
+    /*mov %di, (_numer_of_boot_drive)*/
+
+    /* Instead we should be checking to see if DL is a hardrive I guess lol */
+    cmp $0x80, %dl /* This would be the lowest number DL could be if it was a harddrive we where booting off of */
+
+    /* TODO: REMEMBER THAT IT IS DL NOOOOOOOOOOOOOOOOT Di BECAUSE OMG I AM GOING TO HATE MY LIFE IF I MESS THAT UP AGAIN */
+    
+    /* We will know if it wasn't booting off of a hard drive if it doesnt print the bios hello world*/
+    /* Jump if bellow (if the value in dl is smaller) */
+    jb __spin
+
+    /* The limine bootloader states that values above 0x8f are probably just wack and shouldn't be trusted, so also error on that I guess */
+    cmp $0x8f, %dl 
+
+    /* Jump if above (if the value in dl is larger) */
+    ja __spin 
+
+    /* Calling this before %dl is trashed */
+    call _read_stage2_from_disk
 
     mov $_bootloader_hello_world, %si 
     call _print
 
     call _check_int13h_extension
 
-    call _read_from_disk 
-
+/* fall through into spin, spin is also used for errors and shiiiiit */
+__spin:
     jmp .
 
 /* Bootloader print message */
@@ -80,31 +98,6 @@ _print_done:
     /* Return to the address that was pushed onto the stack by the call instruction */
     ret 
 
-/* TODO: note to self 
-   mov ah, 0x02    ; BIOS read sector function
-   mov dl, 0        ; Read drive 0 ( i.e. first floppy drive )
-   mov ch, 3        ; Select cylinder 3
-   mov dh, 1        ; Select the track on 2 nd side of floppy
-                    ; disk, since this count has a base of 0
-   mov cl, 4        ; Select the 4 th sector on the track - not
-                    ; the 5 th , since this has a base of 1 .
-   mov al,5         ; Read 5 sectors from the start point
-                    ; Lastly , set the address that we ’d like BIOS to read the
-                    ; sectors to , which BIOS expects to find in ES : BX
-                    ; ( i.e. segment ES with offset BX ) .
-   mov bx, 0xa000   ; Indirectly set ES to 0 xa000
-   mov es, bx
-   mov bx, 0x1234   ; Set BX to 0 x1234
-                    ; In our case , data will be read to 0 xa000 :0 x1234 , which the
-                    ; CPU will translate to physical address 0xa1234 int 0x13 
-                    ; Now issue the BIOS interrupt to do the actual read.
-  
-  I wont know if this works until I load stage 2 into memory and call it. 
-
-  Also TODO: what the fuck does this mean? 
-
-*/
-
 /* a label to check if the CPU supports 13h extensions for disk addressing? 
 SUPER USEFUL https://handwiki.org/wiki/INT_13H#List_of_INT_13h_services
 */
@@ -121,52 +114,58 @@ _check_int13h_extension:
   /* the carry flag is set if int 0x13 extensions are not available */
   jc _check_int13h_extension_error
 
-  /* Else just return */
-  jmp _check_int13h_extension_done
+/* Else just fall through into this label and return */
+_check_int13h_extension_done:
+  ret
 
 _check_int13h_extension_error:
   mov $_int13h_err_msg, %si 
   call _print 
   ret
 
-_check_int13h_extension_done:
-  ret 
-
 /* This is meant to be my read from disk function but currently it just throws and error or something idk */
-_read_from_disk: 
-    /* Bios read sector function */
+_read_stage2_from_disk: 
+    /* Bios magic number for the read sectors from drive function */
     mov $0x02, %ah 
-    /* Move the drive we booted off of into %dl to be read */
-    mov (_numer_of_boot_drive), %dl 
-    /* Read cylinder 3 */
-    mov $0x03, %ch 
-    /* Select the track on the second (bottom side) of a floppy disk. This starts at 0 */ 
-    mov $0x01, %dh 
-    /* Select the fourth sector of the track. This starts at 1 */
-    mov $0x04, %cl 
-    /* Read 5 sectors from the start ?? */
-    mov $0x05, %al 
-    
+    /* Move the drive we booted off of into %dl to be read. Our hard disk drive number??? */
+    /* OKAY, so it has to be the harddrive number that's GREAT news, now it's only erroring for number 2 */
+    /* IMPORTANT: make sure that DL is the HARDDRIVE number, TODO: we can't be 100% sure that the harddrive number is infact 0x80, but that's for later*/
+    mov $0x80, %dl 
+    /* ch is the register that you place the cylinder number in */
+    /* Read cylinder 0 (1 as it starts at 0) as this is the cylinder that our stage 2 will be on */
+    mov $0x00, %ch 
+    /* Select the track on the top side of a floppy disk. This starts at 0. DH is the register you place the head in */ 
+    /* I think that our stage2 is on the top side of the floppy, but floppy addressing is hard to understand */
+    mov $0x00, %dh 
+    /* Select the second sector of the track. This starts at 1. CL is the register you the start sector in */
+    /* The reason we are reading the second sector of the track is because the first sector SHOULD be the one holding our bootloader stage1 */
+    mov $0x02, %cl 
+    /* This is the number of sectors we read from: Cylinder 3, Head 1, Sector 4 */
+    /* In otherwords, we should read 5 sectors from the above stated location */
+    /* This reads 63 sectors off of the disk */
+    mov $0x01, %al 
     /* Set the address that the bios reads the sectors to. 
     I assume this works like how a binary is filled out, 
     as in from memory address start -> end is litterally just pasted from the disk. 
     */
-    /* Currently some random ass address */
-    mov $0x0a000, %bx 
+    /* Set the es segment register to 0 by 0ing BS and then moving 0 into es*/
+    xor %bx, %bx 
+    /* Here we 0 es indirectly*/
     mov %bx, %es 
-    mov $0x1234, %bx 
-    /* The bios expects to find the address to move the stuff read from disk in es:bx 
-       so here we are just setting es:bx to some random ass values to test if it is even working I guess 
-    */
-
+    /* Then we load where we want our second stage bootloader to go  into memory */
+    /* This is directly above the first stage bootloader in memory :) */
+    mov $0x7e00, %bx 
     /* Call the interupt to read from disk and load into the correct memory address, pray this works I guess :) */
     int $0x13
-
+    /* The carry flag is set if there was an error reading from disk */
     jc _read_from_disk_error
-
+    /* Here we are comparing the total number of sectors we wanted to read off of the disk to what was actually read */
     cmp %dh, %al
+    /* If the total number of sectors does not equal the amount of sectors we wanted to read off of the disk then an error occured and we jump to an error message */
     jne _read_from_disk_error2
 
+/* otherwise we fall through to read from disk OK and print and OK message to the screen to let me know (for my sanity) that an error did not occur */
+/* If an error did occur you can find the error number in AX and then lookup what that value means, I havent implemented a way to print hex yet so Im just gonna wing it :)*/
 _read_from_disk_done:
   mov $_bootloader_disk_ok, %si 
   call _print 
@@ -180,7 +179,7 @@ _read_from_disk_error:
  _read_from_disk_error2:
   mov $_bootloader_disk_error2, %si 
   call _print 
-  ret 
+  ret
 
 /* Bootloader hello world message to test if the print function is working */
 _bootloader_hello_world: 
@@ -200,18 +199,26 @@ _bootloader_disk_error:
 _bootloader_disk_error2:
   .asciz "[!] A disk error occured! (2)\n\r"
 
-_numer_of_boot_drive: .word 0 
+_numer_of_boot_drive: .word 0
+
 
 /* Pad the binary with bytes until it is 510 bytes in size */
 .org 510 
 /* Then add the magical MBR word value to the end of the binary making it 512 bytes and bootable */ 
 .word 0xaa55
 
-/* The bios will only load the first 512 bytes, so as long as we have the magic word and ensure that the beggining of our binary is within those first 512 bytes it doesnt matter how large the binary is 
-   Also this has got to be stupid, I'm litterally making this several killobytes large lmfao
+/* the bios will only load the first 512 bytes, so I'm going to place a few bytes after the bootloader to jmp to in order to check that something was actually loaded to the correct
+   memory address from the disk 
 
-   Sp even making our binary large as fuck doesnt really do anything??? Maybe I should make it a few GB is size ... like an idiot ...
-
-   LMAO ITS 4 GIGS IN SIZE NOW AND TOOK LIKE 10 SECONDS TO ASSEMBLE FUUUUUUUUUUUUUUUUUUUUUUUUUUUUCK
+   Stuff after this point would be past the first 512 bytes, and as such would be read off of the disk and then loaded to 0x7e00 
 */
 
+mov $_hello_from_stage2, %si 
+call _print 
+
+__stage2_loop: 
+  jmp __stage2_loop /* Jump to current address / spin the CPU */
+  hlt 
+
+_hello_from_stage2:
+  .asciz "Hello from stage2"

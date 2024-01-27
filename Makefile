@@ -16,4 +16,9 @@ objcopy: linker
 qemu: objcopy
 	qemu-system-x86_64 -drive format=raw,file=./build/boot.bin
 
+qemu_debug: objcopy 
+	qemu-system-x86_64 -s -S -drive format=raw,file=./build/boot.bin
+
 run: qemu
+
+debug: qemu_debug
