@@ -46,12 +46,6 @@ _main:
     /* Set the stack base pointer to the stack pointer (both should originally point at whatever value is stored in sp) */ 
     mov %sp, %bp
 
-    /* So actually this is useless I think */
-    /* TODO: remember why I have to do this? */
-    /* Move the boot drive number into a variable to ensure I don't lose it */
-    /* This should default to 0x0 based off of what I've read, however I don't beleive that to be the case */
-    /*mov %di, (_numer_of_boot_drive)*/
-
     /* Instead we should be checking to see if DL is a hardrive I guess lol */
     cmp $0x80, %dl /* This would be the lowest number DL could be if it was a harddrive we where booting off of */
 
@@ -66,6 +60,12 @@ _main:
 
     /* Jump if above (if the value in dl is larger) */
     ja __spin 
+
+    /* So actually this is useless I think */
+    /* TODO: remember why I have to do this? */
+    /* Move the boot drive number into a variable to ensure I don't lose it */
+    /* This should default to 0x0 based off of what I've read, however I don't beleive that to be the case */
+    movb %dl, _numer_of_boot_drive
 
     /* Call this to make sure int13h extensions are enabled */
     call _check_int13h_extension
@@ -106,7 +106,7 @@ _print_done:
 
 /* a label to check if the CPU supports 13h extensions for disk addressing? 
 SUPER USEFUL https://handwiki.org/wiki/INT_13H#List_of_INT_13h_services
-*/
+*/ 
 _check_int13h_extension:
   /* Move this to test whether extensions are available */
   mov $0x41, %ah
@@ -130,14 +130,15 @@ _check_int13h_extension_error:
   jmp __spin /* if 13h extensions are not supported, then just spin because yeah idk fuck u */
 
 /* This is meant to be my read from disk function but currently it just throws and error or something idk */
-/* So like it appears to work, but I actually have 0 clue why it's throwing an error, maybe I need to make a "print_hex" function to print the value? */
+/* So like it appears to work, but I actually have 0 clue why it's throwing an error, maybe I need to make a TODO: "print_hex" function to print the value? */
 _read_stage2_from_disk: 
     /* Bios magic number for the read sectors from drive function */
     mov $0x02, %ah 
     /* Move the drive we booted off of into %dl to be read. Our hard disk drive number??? */
     /* OKAY, so it has to be the harddrive number that's GREAT news, now it's only erroring for number 2 */
     /* IMPORTANT: make sure that DL is the HARDDRIVE number, TODO: we can't be 100% sure that the harddrive number is infact 0x80, but that's for later*/
-    /*mov $0x80, %dl*/ /* This assumes that DL isn't trashed before hand, obviously a TODO when I get it to work */
+    /* Moving the saved value back into DL in case it was trashed */
+    mov _numer_of_boot_drive, %dl
     /* ch is the register that you place the cylinder number in */
     /* Read cylinder 0 (1 as it starts at 0) as this is the cylinder that our stage 2 will be on */
     mov $0x00, %ch 
@@ -150,7 +151,8 @@ _read_stage2_from_disk:
     /* This is the number of sectors we read from: Cylinder 3, Head 1, Sector 4 */
     /* In otherwords, we should read 5 sectors from the above stated location */
     /* This reads 1 sector off of the disk */
-    mov $0x02, %al 
+    /* The reason it is currently 1 sector is because my bootloader is not big enought to be more than 2 sectors large :) */
+    mov $0x01, %al 
     /* Set the address that the bios reads the sectors to. 
     I assume this works like how a binary is filled out, 
     as in from memory address start -> end is litterally just pasted from the disk. 
@@ -169,7 +171,7 @@ _read_stage2_from_disk:
     /* The carry flag is set if there was an error reading from disk */
     jc _read_from_disk_error
     /* Here we are comparing the total number of sectors we wanted to read off of the disk to what was actually read */
-    cmp %al, %dh
+    cmp $0x01, %al
     /* If the total number of sectors does not equal the amount of sectors we wanted to read off of the disk then an error occured and we jump to an error message */
     jne _read_from_disk_error2
 
@@ -208,7 +210,7 @@ _bootloader_disk_error:
 _bootloader_disk_error2:
   .asciz "[!] A disk error occured! (2)\n\r"
 
-_numer_of_boot_drive: .word 0
+_numer_of_boot_drive: .byte 0
 
 
 /* Pad the binary with bytes until it is 510 bytes in size */
@@ -222,12 +224,14 @@ _numer_of_boot_drive: .word 0
    Stuff after this point would be past the first 512 bytes, and as such would be read off of the disk and then loaded to 0x7e00 
 */
 
+/* 
 mov $_hello_from_stage2, %si 
 call _print 
-
+*/ 
 __stage2_loop: 
   jmp __stage2_loop /* Jump to current address / spin the CPU */
   hlt 
-
+/*
 _hello_from_stage2:
   .asciz "Hello from stage2"
+*/
