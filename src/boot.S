@@ -67,13 +67,19 @@ _main:
     /* Jump if above (if the value in dl is larger) */
     ja __spin 
 
+    /* Call this to make sure int13h extensions are enabled */
+    call _check_int13h_extension
     /* Calling this before %dl is trashed */
     call _read_stage2_from_disk
 
     mov $_bootloader_hello_world, %si 
     call _print
 
-    call _check_int13h_extension
+    /* LETS FUCKING GOOOOOOOOOOOOOO IT WORKS HAHAHAHAHAHAH LETS GOOOOOOOOOOOOOOOOOOOOOOOOOO */
+    /* Just to see if it did load */
+    ljmp $0, $0x7e00
+
+
 
 /* fall through into spin, spin is also used for errors and shiiiiit */
 __spin:
@@ -121,7 +127,7 @@ _check_int13h_extension_done:
 _check_int13h_extension_error:
   mov $_int13h_err_msg, %si 
   call _print 
-  ret
+  jmp __spin /* if 13h extensions are not supported, then just spin because yeah idk fuck u */
 
 /* This is meant to be my read from disk function but currently it just throws and error or something idk */
 _read_stage2_from_disk: 
@@ -130,7 +136,7 @@ _read_stage2_from_disk:
     /* Move the drive we booted off of into %dl to be read. Our hard disk drive number??? */
     /* OKAY, so it has to be the harddrive number that's GREAT news, now it's only erroring for number 2 */
     /* IMPORTANT: make sure that DL is the HARDDRIVE number, TODO: we can't be 100% sure that the harddrive number is infact 0x80, but that's for later*/
-    mov $0x80, %dl 
+    /*mov $0x80, %dl*/ /* This assumes that DL isn't trashed before hand, obviously a TODO when I get it to work */
     /* ch is the register that you place the cylinder number in */
     /* Read cylinder 0 (1 as it starts at 0) as this is the cylinder that our stage 2 will be on */
     mov $0x00, %ch 
@@ -142,7 +148,7 @@ _read_stage2_from_disk:
     mov $0x02, %cl 
     /* This is the number of sectors we read from: Cylinder 3, Head 1, Sector 4 */
     /* In otherwords, we should read 5 sectors from the above stated location */
-    /* This reads 63 sectors off of the disk */
+    /* This reads 1 sector off of the disk */
     mov $0x01, %al 
     /* Set the address that the bios reads the sectors to. 
     I assume this works like how a binary is filled out, 
