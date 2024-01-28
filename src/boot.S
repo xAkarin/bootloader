@@ -75,8 +75,8 @@ _main:
     mov $_bootloader_hello_world, %si 
     call _print
 
-    /* LETS FUCKING GOOOOOOOOOOOOOO IT WORKS HAHAHAHAHAHAH LETS GOOOOOOOOOOOOOOOOOOOOOOOOOO */
     /* Just to see if it did load */
+    /* After the test: LETS FUCKING GOOOOOOOOOOOOOO IT WORKS HAHAHAHAHAHAH LETS GOOOOOOOOOOOOOOOOOOOOOOOOOO */
     ljmp $0, $0x7e00
 
 
@@ -152,6 +152,7 @@ _read_stage2_from_disk:
     /* In otherwords, we should read 5 sectors from the above stated location */
     /* This reads 1 sector off of the disk */
     /* The reason it is currently 1 sector is because my bootloader is not big enought to be more than 2 sectors large :) */
+    /* I actually have no idea if I'm going to need to change this in the future or something ... I hope not I think a disk driver will be the most important thing to make after going to stage2 in rust */
     mov $0x01, %al 
     /* Set the address that the bios reads the sectors to. 
     I assume this works like how a binary is filled out, 
@@ -203,15 +204,18 @@ _bootloader_disk_ok:
   .asciz "[~] loaded disk without error or something :)\n\r"
 
 /* Bootloader disk error message for sanity checking */
+/* This error occurs if the cary flag is set, if it is set then AH will be set to the error code. 
+   Since I don't know how to print hex values in ASM (and am too lazy rn), you have to find the value of AH by using GDB remote debugging (yucky)
+*/
 _bootloader_disk_error:
   .asciz "[!] A disk error occured! (1)\n\r"
 
 /* Bootloader disk error 2 for sanity checking named differently with a different value to distinguish differences in errors */
+/* This error occurs if the total number of sectors (reported by the value in AL after int 0x13) != the total number of sectors requested to read */
 _bootloader_disk_error2:
   .asciz "[!] A disk error occured! (2)\n\r"
 
 _numer_of_boot_drive: .byte 0
-
 
 /* Pad the binary with bytes until it is 510 bytes in size */
 .org 510 
@@ -224,14 +228,15 @@ _numer_of_boot_drive: .byte 0
    Stuff after this point would be past the first 512 bytes, and as such would be read off of the disk and then loaded to 0x7e00 
 */
 
-/* 
+_stage2_start: 
+
 mov $_hello_from_stage2, %si 
 call _print 
-*/ 
+ 
 __stage2_loop: 
   jmp __stage2_loop /* Jump to current address / spin the CPU */
   hlt 
-/*
+
 _hello_from_stage2:
   .asciz "Hello from stage2"
-*/
+
