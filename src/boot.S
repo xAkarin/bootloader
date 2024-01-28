@@ -130,6 +130,7 @@ _check_int13h_extension_error:
   jmp __spin /* if 13h extensions are not supported, then just spin because yeah idk fuck u */
 
 /* This is meant to be my read from disk function but currently it just throws and error or something idk */
+/* So like it appears to work, but I actually have 0 clue why it's throwing an error, maybe I need to make a "print_hex" function to print the value? */
 _read_stage2_from_disk: 
     /* Bios magic number for the read sectors from drive function */
     mov $0x02, %ah 
@@ -149,7 +150,7 @@ _read_stage2_from_disk:
     /* This is the number of sectors we read from: Cylinder 3, Head 1, Sector 4 */
     /* In otherwords, we should read 5 sectors from the above stated location */
     /* This reads 1 sector off of the disk */
-    mov $0x01, %al 
+    mov $0x02, %al 
     /* Set the address that the bios reads the sectors to. 
     I assume this works like how a binary is filled out, 
     as in from memory address start -> end is litterally just pasted from the disk. 
@@ -161,12 +162,14 @@ _read_stage2_from_disk:
     /* Then we load where we want our second stage bootloader to go  into memory */
     /* This is directly above the first stage bootloader in memory :) */
     mov $0x7e00, %bx 
+    /* Clear the carry flag just to MAKE sure that it is throwing an error */
+    clc
     /* Call the interupt to read from disk and load into the correct memory address, pray this works I guess :) */
     int $0x13
     /* The carry flag is set if there was an error reading from disk */
     jc _read_from_disk_error
     /* Here we are comparing the total number of sectors we wanted to read off of the disk to what was actually read */
-    cmp %dh, %al
+    cmp %al, %dh
     /* If the total number of sectors does not equal the amount of sectors we wanted to read off of the disk then an error occured and we jump to an error message */
     jne _read_from_disk_error2
 
