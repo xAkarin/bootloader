@@ -3,13 +3,20 @@ name = "bootloader_rust"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+# To run: cargo b --release && objcopy -I elf32-i386 -O binary target/x86_16bit/release/bootloader_rust target/disk_image.bin && qemu-system-x86_64 -drive format=raw,file=target/disk_image.bin
 
 [dependencies]
 
 [profile.dev]
-panic = "abort"
 opt-level = "s"
-strip = true
+lto = true
+codegen-units = 1
+debug = false
 overflow-checks = false
 
+[profile.release]
+opt-level = "s"
+lto = true
+codegen-units = 1
+debug = false
+overflow-checks = false
