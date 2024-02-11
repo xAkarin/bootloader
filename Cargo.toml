@@ -1,11 +1,11 @@
-[package]
-name = "bootloader_rust"
-version = "0.1.0"
-edition = "2021"
-
+[workspace]
+resolver = "2"
+members = [
+    "first_stage",
+    "second_stage",
+    "booter",
+]
 # To run: cargo b --release && objcopy -I elf32-i386 -O binary target/x86_16bit/release/bootloader_rust target/disk_image.bin && qemu-system-x86_64 -drive format=raw,file=target/disk_image.bin
-
-[dependencies]
 
 [profile.dev]
 opt-level = "s"

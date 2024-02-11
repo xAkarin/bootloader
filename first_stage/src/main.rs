@@ -1,5 +1,6 @@
 #![no_std]
 #![no_main]
+#![allow(unused, dead_code)]
 
 use core::arch::global_asm;
 global_asm!(include_str!("boot.s"));
