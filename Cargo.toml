@@ -5,18 +5,3 @@ members = [
     "second_stage",
     "booter",
 ]
-# To run: cargo b --release && objcopy -I elf32-i386 -O binary target/x86_16bit/release/bootloader_rust target/disk_image.bin && qemu-system-x86_64 -drive format=raw,file=target/disk_image.bin
-
-[profile.dev]
-opt-level = "s"
-lto = true
-codegen-units = 1
-debug = false
-overflow-checks = false
-
-[profile.release]
-opt-level = "s"
-lto = true
-codegen-units = 1
-debug = false
-overflow-checks = false

@@ -9,18 +9,9 @@ const ENTRY_POINT_ADDR: u64 = 0x7c00;
 
 #[no_mangle]
 pub extern "C" fn first_stage(disk_number: u16) {
-    // write_str("     ");
-    // let partition_table = unsafe { core::slice::from_raw_parts((0x7c00+446) as *const u8, 16 * 4) };
-    // write_v8(&[((disk_number as u8 + b'0') as char) as u8], 0);
+    write_v8(&[((disk_number as u8 + b'0') as char) as u8], 0);
     let buffer_addr = (ENTRY_POINT_ADDR + 512) as *mut ();
-    write_v8(&[b'R'], 2);
     read_disk(disk_number, LBAReadPacket::new(1, buffer_addr, 1).unwrap());
-    write_v8(
-        unsafe { core::slice::from_raw_parts(buffer_addr as *mut u8, 512) },
-        160,
-    );
-    write_v8(&[b'D'], 4);
-    // write_v8(&[second_stage_start() as u8], 6);
 
     loop {}
 }

@@ -1,4 +1,14 @@
+cargo-features = ["per-package-target"]
 [package]
 name = "second_stage"
 version = "0.1.0"
 edition = "2021"
+# default-target = "../x86_16bit.json"
+# forced-target = "../x86_16bit.json"
+
+
+[profile.dev]
+
+[profile.release]
+opt-level = 3
+lto = true
