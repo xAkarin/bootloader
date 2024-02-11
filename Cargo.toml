@@ -5,3 +5,16 @@ members = [
     "second_stage",
     "booter",
 ]
+
+[profile.stage1]
+inherits = "dev"
+strip = true
+opt-level = "s"
+lto = true
+codegen-units = 1
+debug = false
+overflow-checks = false
+
+[profile.stage2]
+inherits = "dev" 
+

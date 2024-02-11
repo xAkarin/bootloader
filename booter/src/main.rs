@@ -2,13 +2,16 @@ use std::io::{Read, Write};
 
 use booter::*;
 fn main() {
-    exec_cmd_wait(format!("cargo build --release --target ../{}", TARGET).as_str(), "first_stage").expect("Failed compiling first stage");
-    exec_cmd_wait(format!("cargo build --release --target ../{}", TARGET).as_str(), "second_stage").expect("Failed compiling second stage");
-    println!("Creating bootable image...");
+    exec_cmd_wait(format!("cargo build --profile stage1 --target ../{}", TARGET).as_str(), "first_stage").expect("Failed to compile the first stage");
+    exec_cmd_wait(format!("cargo build --profile stage2 --target ../{}", TARGET).as_str(), "second_stage").expect("Failed to compile the second stage");
+    println!("[!] Creating bootable image...");
 
-    exec_cmd_wait("llvm-objcopy -I elf64-x86-64 -O binary --binary-architecture=i386:x86-64 target/x86_16bit/release/first_stage target/first_stage.bin", ".").expect("Failed objcopy for first stage");
-    exec_cmd_wait("llvm-objcopy -I elf64-x86-64 -O binary --binary-architecture=i386:x86-64 target/x86_16bit/release/second_stage target/second_stage.bin", ".").expect("Failed objcopy for second stage");
+    // Requires you to install llvm tools
+    // sudo apt install llvm 
+    exec_cmd_wait("llvm-objcopy -I elf64-x86-64 -O binary --binary-architecture=i386:x86-64 target/x86_16bit/stage1/first_stage target/first_stage.bin", ".").expect("Failed to objcopy the first stage");
+    exec_cmd_wait("llvm-objcopy -I elf64-x86-64 -O binary --binary-architecture=i386:x86-64 target/x86_16bit/stage2/second_stage target/second_stage.bin", ".").expect("Failed to objcopy the second stage");
     exec_cmd_wait("cp first_stage.bin disk_img.bin", "target").unwrap();
+
     // Appends the two files
     let mut data_file = std::fs::OpenOptions::new()
         .read(true)

@@ -3,22 +3,4 @@ cargo-features = ["per-package-target"]
 name = "first_stage"
 version = "0.1.0"
 edition = "2021"
-# default-target = "../x86_16bit.json"
-# forced-target = "../x86_16bit.json"
 
-
-[profile.dev]
-opt-level = "s"
-lto = true
-codegen-units = 1
-debug = false
-overflow-checks = false
-strip = true
-
-[profile.release]
-strip = true
-opt-level = "s"
-lto = true
-codegen-units = 1
-debug = false
-overflow-checks = false

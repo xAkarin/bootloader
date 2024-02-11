@@ -5,7 +5,10 @@
 use core::arch::global_asm;
 global_asm!(include_str!("boot.s"));
 
-const ENTRY_POINT_ADDR: u64 = 0x7c00;
+const ENTRY_POINT_ADDR: u16 = 0x7c00;
+
+/// 512 bytes past the entry 
+const SECOND_STAGE_ENTRY: u16 = 0x7e00; 
 
 #[no_mangle]
 pub extern "C" fn first_stage(disk_number: u16) {
@@ -18,8 +21,10 @@ pub extern "C" fn first_stage(disk_number: u16) {
 
 #[repr(C, packed)]
 struct LBAReadPacket {
-    /// size of packet, so 16 bytes
+    /// where the size of the packet is stored
+    /// OSDev is a bit missleading, this is where a number describing the size of the packet is, so 16 bytes
     size: u8,
+    /// Always zero 
     _zero: u8,
     /// max 127 on some BIOSes
     n_sectors: u16,
@@ -74,16 +79,10 @@ fn write_v8(s: &[u8], offset: usize) {
     }
 }
 
+/// cfg not test gets rid of an error
+#[cfg(not(test))]
 #[panic_handler]
 pub fn panic(_: &core::panic::PanicInfo) -> ! {
     loop {}
 }
 
-// extern "C" {
-//     static _second_stage_start: u8;
-// }
-
-// fn second_stage_start() -> *const () {
-//     let ptr: *const u8 = unsafe { &_second_stage_start };
-//     ptr as *const ()
-// }
