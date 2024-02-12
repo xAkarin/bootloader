@@ -19,8 +19,8 @@ fn start(disk_number: u16, partition_table_start: *const u8) -> ! {
     write_str("Successfully jumped to stage 2...", 160*3);
     write_str("Successfully jumped to stage 2...", 160*4);
     write_str("Successfully jumped to stage 2...", 160*5);
-    write_str("Successfully jumped to stage 2...", 160*6);
-    write_str("Successfully jumped to stage 2...", 160*7);
+    // write_str("Successfully jumped to stage 2...", 160*6);
+    // write_str("Successfully jumped to stage 2...", 160*7);
     // write_str("Successfully jumped to stage 2...", 0);
     // write_str("Successfully jumped to stage 2...", 0);
     // write_str("Successfully jumped to stage 2...", 0);

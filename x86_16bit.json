@@ -5,7 +5,7 @@
 	"dynamic-linking": false,
 	"executables": true,
 	"linker-flavor": "ld.lld",
-	"linker": "rust-lld",
+	"linker": "ld.lld",
 	"llvm-target": "i386-unknown-none-code16",
 	"max-atomic-width": 64,
 	"position-independent-executables": false,

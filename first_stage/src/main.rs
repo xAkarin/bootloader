@@ -17,14 +17,16 @@ pub extern "C" fn first_stage(disk_number: u16) {
     let mut sector_number: u32 = 1;
     let mut buffer_addr = SECOND_STAGE_ADDR;
     loop {
-        // write_v8(&[b'B',n+b'0'], 160*n as usize);
         let n = ((sector_number&0xFF) as u8);
-        write_v8(&[b'0'+n], 160);
+        write_v8(&[b'B',n+b'0'], 160*n as usize);
+        // write_v8(&[b'0'+n], 160);
         read_disk(disk_number, LBAReadPacket::new(SECTOR_STEP, buffer_addr, sector_number as u64).unwrap());
+        write_v8(&[b'D'], 160*n as usize+4);
         let buffer = unsafe{core::slice::from_raw_parts(buffer_addr as *const u16, 256)};
         if *buffer.last().unwrap() == 0xdead {
             break;
         }
+        // write_v8(&[b'D'], 160*n as usize);
         
         //TODO Investigate why this line breaks everything ?
         // write_v8(&[b'0'+sector_number as u8], (sector_number as usize)*160);
@@ -69,17 +71,22 @@ impl LBAReadPacket {
     }
 }
 /// If the disk drive itself does not support LBA addressing, the BIOS will automatically convert the LBA to a CHS address for you -- so this function still works.
-fn read_disk(disk: u16, packet: LBAReadPacket) {
+fn read_disk(disk_number: u16, packet: LBAReadPacket) {
     let packet_addr = (&packet as *const LBAReadPacket) as u16;
+    let mut a = 0;
     unsafe {
         core::arch::asm!(
+            "push 0x7a", // error code `z`, passed to `fail` on error
             "mov {1:x}, si", // backup the `si` register, whose contents are required by LLVM
             "mov si, {0:x}",
             "int 0x13",
+            "jc spin",
+            "pop si", // remove error code again
+            "mov si, {1:x}", // restore the `si` register to its prior state
             in(reg) packet_addr,
-            out(reg) _,
+            out(reg) a,
             in("ax") 0x4200u16,
-            in("dx") disk,
+            in("dx") disk_number,        
         );
     }
 }
