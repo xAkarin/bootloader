@@ -1,20 +1,26 @@
 [workspace]
 resolver = "2"
 members = [
-    "first_stage",
-    "second_stage",
     "booter",
 ]
+exclude = ["first_stage", "second_stage"]
 
 [profile.stage1]
 inherits = "dev"
-strip = true
-opt-level = "s"
-lto = true
-codegen-units = 1
-debug = false
-overflow-checks = false
+# strip = true
+# opt-level = "s"
+# lto = true
+# codegen-units = 1
+# debug = false
+# overflow-checks = false
 
 [profile.stage2]
 inherits = "dev" 
+strip = true
+# opt-level = "s"
+# lto = true
+# codegen-units = 1
+# debug = false
+# overflow-checks = false
+
 

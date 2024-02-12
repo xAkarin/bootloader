@@ -4,3 +4,11 @@ name = "second_stage"
 version = "0.1.0"
 edition = "2021"
 
+
+[profile.stage2]
+inherits = "dev"
+strip = true
+opt-level = "s"
+lto = true
+codegen-units = 1
+panic = "abort" 

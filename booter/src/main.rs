@@ -8,8 +8,8 @@ fn main() {
 
     // Requires you to install llvm tools
     // sudo apt install llvm 
-    exec_cmd_wait("llvm-objcopy -I elf64-x86-64 -O binary --binary-architecture=i386:x86-64 target/x86_16bit/stage1/first_stage target/first_stage.bin", ".").expect("Failed to objcopy the first stage");
-    exec_cmd_wait("llvm-objcopy -I elf64-x86-64 -O binary --binary-architecture=i386:x86-64 target/x86_16bit/stage2/second_stage target/second_stage.bin", ".").expect("Failed to objcopy the second stage");
+    exec_cmd_wait("llvm-objcopy -I elf64-x86-64 -O binary --binary-architecture=i386:x86-64 first_stage/target/x86_16bit/stage1/first_stage target/first_stage.bin", ".").expect("Failed to objcopy the first stage");
+    exec_cmd_wait("llvm-objcopy -I elf64-x86-64 -O binary --binary-architecture=i386:x86-64 second_stage/target/x86_16bit/stage2/second_stage target/second_stage.bin", ".").expect("Failed to objcopy the second stage");
     exec_cmd_wait("cp first_stage.bin disk_img.bin", "target").unwrap();
 
     // Appends the two files
@@ -28,7 +28,7 @@ fn main() {
         .expect("write failed");
 
 
-    println!("Launching bootable image...");
+    println!("[!] Launching bootable image...");
     exec_cmd_wait(
         "qemu-system-x86_64 -drive format=raw,file=target/disk_img.bin",
         ".",

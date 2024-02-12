@@ -24,12 +24,10 @@ SECTIONS {
     .eh_frame_hdr : {
         *(.eh_frame_hdr .eh_frame_hdr.*)
     }
-
     . = ALIGN(512);
-
+    . = . - 2;
     _second_stage_end = .;
 
-    . = 0x0007FFFF - 2;
     .end_marker :
     {
         SHORT(0xdead)

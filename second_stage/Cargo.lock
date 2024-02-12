@@ -3,5 +3,5 @@
 version = 3
 
 [[package]]
-name = "bootloader_rust"
+name = "second_stage"
 version = "0.1.0"
