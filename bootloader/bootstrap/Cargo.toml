@@ -1,4 +1,3 @@
-cargo-features = ["per-package-target"]
 [package]
 name = "first_stage"
 version = "0.1.0"
