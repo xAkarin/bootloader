@@ -1,7 +1,5 @@
-use std::path::Path; 
+use std::{os::unix::fs::MetadataExt, path::Path}; 
 
-pub const TARGET: &str = "target.json";
-pub const BOOTSTRAP_DIR: &str = "../bootloader/bootstrap";
 pub const STAGE1_DIR: &str = "";
 
 pub fn exec_cmd_wait(command: &str, current_dir: &str) -> std::io::Result<std::process::ExitStatus> { 
@@ -22,5 +20,21 @@ pub fn exec_cmd_wait(command: &str, current_dir: &str) -> std::io::Result<std::p
     cmd.stdout(std::process::Stdio::piped());
     
     return cmd.spawn()?.wait();
+}
+
+#[allow(dead_code)]
+pub fn remove_elf_16(){
+    todo!()
+}
+
+#[allow(dead_code)]
+pub fn ensure_size_512(file_name: &str) -> bool{
+    let file = std::fs::File::open(&file_name).expect(format!("Failed to open file: {}", &file_name).as_str()); 
+
+    if file.metadata().unwrap().size() > 512 {
+        return false; 
+    } 
+
+    return true;  
 }
 

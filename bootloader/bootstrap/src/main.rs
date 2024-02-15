@@ -71,10 +71,14 @@ global_asm!{r#"
 
 
 #[no_mangle]
-extern "C" fn bootstrap_main() {
-    loop {
-        bprint();
-    }  
+extern "C" fn bootstrap_main(disk_number: u16) {
+    // ensure that we do not lose this 
+    let internal_disk_number = disk_number;
+    // where we load the first stage to 
+    let load_address = 0x7e00;
+
+
+
 }
 
 fn bprint(){
@@ -125,67 +129,74 @@ fn bprint(){
 //    loop {} // Could use unreachable! but it adds the unwrap text, which takes quite a lot of space !
 //}
 
-//#[repr(C, packed)]
-//struct LBAReadPacket {
-    /// where the size of the packet is stored
-    /// OSDev is a bit missleading, this is where a number describing the size of the packet is, so 16 bytes
-//    size: u8,
-    /// Always zero 
-//    _zero: u8,
-    /// max 127 on some BIOSes
-//    n_sectors: u16,
-    /// 16 bit segment:16 bit offset
-//    transfer_buffer: u32,
-//    low_lba: u32,
-    /// upper 16-bits of 48-bit starting LBA
-//   hig_16bit_start_lba: u32,
-//}
-//impl LBAReadPacket {
-//    pub fn new(sectors: u16, addr: u32, lba: u64) -> Option<Self> {
-//        if lba >= 2 ^ 48 {
-//            return None;
-//        }
-//        Some(Self {
-//            size: core::mem::size_of::<Self>() as u8,
-//            _zero: 0,
-//            n_sectors: sectors,
-//            transfer_buffer: addr,
-//            low_lba: (lba & u32::MAX as u64) as u32,
-//            hig_16bit_start_lba: (lba >> 32) as u32,
-//        })
-//    }
-//}
-/// If the disk drive itself does not support LBA addressing, the BIOS will automatically convert the LBA to a CHS address for you -- so this function still works.
-//fn read_disk(disk_number: u16, packet: LBAReadPacket) {
-//    let packet_addr = (&packet as *const LBAReadPacket) as u16;
-//    let mut a = 0;
-//    unsafe {
-//        core::arch::asm!(
-//           "push 0x7a", // error code `z`, passed to `fail` on error
-//            "mov {1:x}, si", // backup the `si` register, whose contents are required by LLVM
-//            "mov si, {0:x}",
-//            "int 0x13",
-//            "jc spin",
-//            "pop si", // remove error code again
-//            "mov si, {1:x}", // restore the `si` register to its prior state
-//            in(reg) packet_addr,
-//            out(reg) a,
-//            in("ax") 0x4200u16,
-//            in("dx") disk_number,        
-//        );
-//    }
-//}
-//fn write_v8(s: &[u8], offset: usize) {
-//    let vga_buffer = unsafe { core::slice::from_raw_parts_mut(0xb8000 as *mut u8, 80 * 25 * 2) };
-//    for (i, char) in s.iter().enumerate() {
-//        vga_buffer[i * 2 + offset] = *char as u8;
-//        vga_buffer[i * 2 + offset+1] = 0x0F;
-//    }
-//}
+#[repr(C, packed)]
+struct LBAReadPacket {
+    // The size of this packet, always 16
+    size: u8,
+    // never used, reserved for 0's
+    reserved: u8,
+    // the number of sectors to be read off of disk
+    sectors: u16,
+    // the segment part of the segment:offset memory scheme. These two bytes are where we load disk
+    // contents into memory
+    segment: u16,
+    // the offset part of the segment:offset memory scheme.
+    offset: u16, 
+    // what to read off of disk. The "logical block address" to be read. 
+    // Comes in a lower and higher part
+    low_lba: u32,
+    high_lba: u32,
+}
+impl LBAReadPacket {
+    pub fn new(_sectors: u16, _segment: u16, _offset: u16, _lba: u64) -> Option<Self> {
+        if _lba >= 2 ^ 48 {
+            return None;
+        }
+        Some(Self {
+            size: 16,
+            reserved: 0,
+            sectors: _sectors,
+            segment: _segment, 
+            offset: _offset, 
+            low_lba: (_lba & u32::MAX as u64) as u32,
+            high_lba: (_lba >> 32) as u32,
+        })
+    }
+}
+
+fn read_disk(disk_number: u16, packet: LBAReadPacket) {
+    let packet_addr = (&packet as *const LBAReadPacket) as u16;
+    let mut a = 0;
+    unsafe {
+        core::arch::asm!(
+           "push 0x7a", // error code `z`, passed to `fail` on error
+            "mov {1:x}, si", // backup the `si` register, whose contents are required by LLVM
+            "mov si, {0:x}",
+            "int 0x13",
+            "jc spin",
+            "pop si", // remove error code again
+            "mov si, {1:x}", // restore the `si` register to its prior state
+            in(reg) packet_addr,
+            out(reg) a,
+            in("ax") 0x4200u16,
+            in("dx") disk_number,        
+        );
+    }
+}
+
+fn write_v8(s: &[u8], offset: usize) {
+    let vga_buffer = unsafe { core::slice::from_raw_parts_mut(0xb8000 as *mut u8, 80 * 25 * 2) };
+    for (i, char) in s.iter().enumerate() {
+        vga_buffer[i * 2 + offset] = *char as u8;
+        vga_buffer[i * 2 + offset+1] = 0x0F;
+    }
+}
 
 /// cfg not test gets rid of an error
 #[cfg(not(test))]
 #[panic_handler]
 pub fn panic(_: &core::panic::PanicInfo) -> ! {
-    loop {}
+    loop {
+        bprint(); 
+    }
 }
