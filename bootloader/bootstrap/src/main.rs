@@ -1,26 +1,30 @@
 #![no_std]
 #![no_main]
-#![allow(unused, dead_code)]
 
-use core::arch::global_asm;
+use core::arch::{asm, global_asm};
 
 global_asm!{r#"
-    .code16
-    .section asm, "awx"
+    .section .asm, "awx"
     .global __asm_entry
+    .code16
 
-    __asm_entry: 
-    mov 0x0e, %ah
-    mov $'g', %al
-    int $0x10
+    __asm_entry:
+        ljmp $0, $__asm_fix_cs
 
+    __asm_fix_cs: 
+        mov $0x0e, %ah
+        mov $'g', %al
+        int $0x10
+        
     spin:
-    mov 0x0e, %ah
-    mov $'g', %al
-    int $0x10
-    jmp spin 
+        mov $0x0e, %ah
+        mov $'g', %al
+        int $0x10
+        jmp spin
 
-"#, options(att_syntax)}
+    "#, 
+    options(att_syntax)
+}
 
 
 

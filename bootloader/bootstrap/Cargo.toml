@@ -2,13 +2,10 @@
 name = "first_stage"
 version = "0.1.0"
 edition = "2021"
+build = "build.rs" # sanity check
 
 [profile.stage1]
 inherits = "release"
 strip = true
 opt-level = "s"
-lto = true
-codegen-units = 1
-debug = false
-overflow-checks = false
 panic = "abort" 
