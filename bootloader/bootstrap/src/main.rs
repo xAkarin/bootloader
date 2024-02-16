@@ -90,7 +90,14 @@ extern "C" fn bootstrap_main(disk_number: u16) {
     let load_addr: u32 = (BASE+512).into();
     let mbr_offset: u64 = 1;
     let sectors = 1;
-    let partition_size = unsafe {core::ptr::read((BASE+494+12) as *const u8)} as u64; // TODO Support partition size of u64
+    // for i in 0..4 {
+    //     let size = unsafe {core::ptr::read((BASE+446+(16*i)+12) as *const u8)} as u64;
+    //     chr_print(size as u8+b'0');
+    //     let offset = unsafe {core::ptr::read((BASE+446+(16*i)+8) as *const u8)} as u64;
+    //     chr_print(offset as u8+b'0');
+    //     chr_print(b' ');
+    // }
+    let partition_size = unsafe {core::ptr::read((BASE+446+12) as *const u8)} as u64; // TODO Support partition size of u64
     for s in 0..partition_size {
         let addr = (load_addr as u64+s*512);
         let start_lba = s+mbr_offset;
@@ -108,7 +115,11 @@ extern "C" fn bootstrap_main(disk_number: u16) {
     }
     // read_disk(disk_number, LBAReadPacket::new(1, 0, load_address));
     print("Bootstrapper...\r\n"); // QEMU seems to need \r + \n to do a proper new line ?
-    unsafe { core::arch::asm!("jmp {:e}", in(reg) load_addr) }
+    unsafe { core::arch::asm!("
+    mov dx, {disk:x}
+    push dx
+    jmp {addr:e}
+    ", disk=in(reg) disk_number, addr=in(reg) load_addr) }
     loop {}
 }
 

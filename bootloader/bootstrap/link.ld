@@ -17,12 +17,21 @@ SECTIONS {
         *(.comment .comment.*)    
     }
 
-    . = 0x7c00 + 510-16;
+    . = 0x7c00 + 510-16*4;
 
     _partition_table = .;
     .partition_table :
     {
-        /* partition table entry 4 */
+        /* partition table entries */
+        QUAD(0)
+        QUAD(0)
+
+        QUAD(0)
+        QUAD(0)
+
+        QUAD(0)
+        QUAD(0)
+        
         QUAD(0)
         QUAD(0)
     }

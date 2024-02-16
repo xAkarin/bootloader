@@ -69,18 +69,25 @@ pub fn append_file(file1: &str, file2: &str, dest: &str) {
         .expect(format!("Failed to write to the destination: {} !", dest).as_str());
 }
 
-pub fn setup_partition_size(file: String, partition_size: u64) -> Result<(), io::Error> {
+/// Partition size in sectors
+pub fn setup_partition_size(
+    file: String,
+    partition_size: u64,
+    partition_offset: u64,
+    partition_idx: u8,
+) -> Result<(), io::Error> {
+    assert!(partition_idx < 4);
     let f = std::fs::OpenOptions::new()
         .read(true)
         .write(true)
-        .open(file)
-        ?;
+        .open(file)?;
     let mut partition = [0; 16];
-    f.read_at(&mut partition, 446+16*3)?;
+    f.read_at(&mut partition, 446 + 16 * partition_idx as u64)?;
     // https://wiki.osdev.org/MBR_(x86)#Partition_table_entry_format
-    partition[8] = 1;
-    partition[0xC] = (partition_size/512) as u8;
-    f.write_at(&partition, 446+16*3)?;
+    //TODO Support u64
+    partition[8] = partition_offset as u8;
+    partition[0xC] = partition_size as u8;
+    f.write_at(&partition, 446 + 16 * partition_idx as u64)?;
     Ok(())
 }
 
