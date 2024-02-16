@@ -17,8 +17,7 @@ SECTIONS {
         *(.comment .comment.*)    
     }
 
-    . += 2; 
-    . = ALIGN(512) - 2;
+    . = 0x7c00 + 510;
 
     .magic_word : {
         SHORT(0xaa55)
