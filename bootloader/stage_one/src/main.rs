@@ -8,6 +8,7 @@ global_asm! {r#"
     /*
      * Boiler plate assembly at the start of the program to ensure it jumps to the correct function
      * Kinda useless but enlightens my anxiety doing bootloader dev'ing
+     * TODO Remove the need for this
      * */
     .code16
     .global __asm_first_stage_entry
@@ -18,10 +19,16 @@ global_asm! {r#"
      "#,
 }
 
+mod protected;
+use protected::*;
+
 #[no_mangle]
 extern "C" fn stage_one_main() {
     print("Stage 1...\r\n");
-    print("Stage 1 lorem...\r\n");
+    unsafe { enter_protected() };
+    // This panics cuz it's in 16bit, so it's working !!
+    // print("Protec...\r\n");
+
     loop {}
 }
 
