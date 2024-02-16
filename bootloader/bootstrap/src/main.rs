@@ -8,6 +8,7 @@ mod disk;
 use disk::*;
 
 use core::arch::{asm, global_asm};
+use core::mem; 
 
 global_asm! {r#"
     .section .asm, "awx"
@@ -108,7 +109,16 @@ extern "C" fn bootstrap_main(disk_number: u16) {
     }
     // read_disk(disk_number, LBAReadPacket::new(1, 0, load_address));
     print("Bootstrapper...\r\n"); // QEMU seems to need \r + \n to do a proper new line ?
-    unsafe { core::arch::asm!("jmp {:e}", in(reg) load_addr) }
+  
+    let stage1_addr = 0x7e00 as *const (); 
+    let stage1: extern "C" fn() -> ! = unsafe { 
+        mem::transmute(stage1_addr) 
+    };   
+
+    stage1(); 
+
+    print("ggasdasfggass");
+
     loop {}
 }
 
