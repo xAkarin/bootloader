@@ -4,6 +4,9 @@
 // #![cfg_attr(debug_assertions, allow(unused, dead_code))]
 #![allow(unused, dead_code)]
 
+mod disk;
+use disk::*;
+
 use core::arch::{asm, global_asm};
 
 global_asm!{r#"
@@ -62,11 +65,19 @@ global_asm!{r#"
         push %dx
         call bootstrap_main
 
+    disk_error:
+    mov $0x0e, %ah
+    mov $'d', %al
+    int $0x10
+
+
     spin:
-        mov $0x0e, %ah
-        mov $'g', %al
-        int $0x10
-        jmp spin
+    mov $0x0e, %ah
+    mov $'s', %al
+    int $0x10
+    hlt
+    hlt
+    jmp spin
 
     "#, 
     options(att_syntax)
@@ -75,11 +86,11 @@ global_asm!{r#"
 
 #[no_mangle]
 extern "C" fn bootstrap_main(disk_number: u16) {
-    // ensure that we do not lose this 
-    let internal_disk_number = disk_number;
-    // where we load the first stage to 
-    let load_address = 0x7e00;
-    print("Working!")
+    chr_print(disk_number as u8);
+    let load_address = 0x7c00 + 512;
+    read_disk(disk_number, LBAReadPacket::new(1, 0, load_address));
+    print("Working!");
+    unsafe {core::arch::asm!("jmp {:e}", in(reg) load_address)}
 }
 
 #[inline(always)]
@@ -97,50 +108,11 @@ fn print(s: &str){
     }
 }
 
-#[repr(C, packed)]
-struct LBAReadPacket {
-    // The size of this packet, always 16
-    size: u8,
-    // never used, reserved for 0's
-    reserved: u8,
-    // the number of sectors to be read off of disk
-    sectors: u16,
-    // the segment part of the segment:offset memory scheme. These two bytes are where we load disk
-    // contents into memory
-    segment: u16,
-    // the offset part of the segment:offset memory scheme.
-    offset: u16, 
-    // what to read off of disk. The "logical block address" to be read. 
-    // Comes in a lower and higher part
-    low_lba: u32,
-    high_lba: u32,
-}
-
-fn read_disk(disk_number: u16, packet: LBAReadPacket) {
-    let packet_addr = (&packet as *const LBAReadPacket) as u16;
-    let mut a = 0;
-    unsafe {
-        core::arch::asm!(
-           "push 0x7a", // error code `z`, passed to `fail` on error
-            "mov {1:x}, si", // backup the `si` register, whose contents are required by LLVM
-            "mov si, {0:x}",
-            "int 0x13",
-            "jc spin",
-            "pop si", // remove error code again
-            "mov si, {1:x}", // restore the `si` register to its prior state
-            in(reg) packet_addr,
-            out(reg) a,
-            in("ax") 0x4200u16,
-            in("dx") disk_number,        
-        );
-    }
-}
-
 // cfg not test gets rid of an error
 #[cfg(not(test))]
 #[panic_handler]
 pub fn panic(_: &core::panic::PanicInfo) -> ! {
+    print("PANIC!"); 
     loop {
-        print("PANIC!"); 
     }
 }

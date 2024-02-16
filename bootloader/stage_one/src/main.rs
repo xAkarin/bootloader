@@ -27,14 +27,14 @@ global_asm!{r#"
 
 #[no_mangle]
 extern "C" fn stage_one_main(){
-    loop { 
+    // loop { 
         unsafe{ 
             asm!("mov ah, 0x0e",
-                 "mov al, \'v\'",
+                 "mov al, \'d\'",
                  "int 0x10"
                 );
         }
-    }
+    // }
 
 }
 

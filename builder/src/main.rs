@@ -48,5 +48,6 @@ fn main() {
         COMPILED_BOOTLOADER_LOC,
     );
 
-    cmd!("qemu-system-x86_64 -drive file={},format=raw", COMPILED_BOOTLOADER_LOC);
+    let user_args = std::env::args().skip(1).map(|a| format!("{a} ")).collect::<String>();
+    cmd!("qemu-system-x86_64 -drive file={},format=raw {user_args}", COMPILED_BOOTLOADER_LOC);
 }
