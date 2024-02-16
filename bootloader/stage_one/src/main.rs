@@ -11,11 +11,13 @@ use protected::*;
 #[link_section = ".stage1_entry"] 
 extern "C" fn stage_one_main() {
     // sanity checking 
-    unsafe { 
-        asm!("mov ah, 0x0e",
-         "mov al, 'l'",
-         "int 0x10");
-    }
+    //unsafe { 
+    //    asm!("mov ah, 0x0e",
+    //     "mov al, 'l'",
+    //     "int 0x10");
+    //}
+    
+    print("in stage1\r\n");
 
     loop {}
 }
@@ -24,8 +26,8 @@ extern "C" fn stage_one_main() {
 fn chr_print(chr: u8) {
     unsafe {
         asm!("mov ah, 0x0e",
-         "mov al, {}",
-         "int 0x10", in(reg_byte) chr
+         "int 0x10", 
+         in("al") chr
         );
     }
 }
