@@ -7,7 +7,7 @@ use core::arch::asm;
 /// # Safety
 /// Ensure A20 line is enabled
 /// Ensure you jump to a 32 bit code segment after =)
-#[inline]
+#[inline(always)]
 pub unsafe fn enter_protected() {
     unsafe { asm!("cli") }
     GDT.load();
@@ -67,6 +67,7 @@ impl GdtProtectedMode {
     }
     /// # Safety
     /// Ensure interrupts are disabled
+    #[inline(always)]
     unsafe fn load(&'static self) {
         let pointer = GdtPointer {
             base: self,

@@ -8,6 +8,7 @@ mod disk;
 use disk::*;
 
 use core::arch::{asm, global_asm};
+use core::mem;
 
 global_asm! {r#"
     .section .asm, "awx"
@@ -87,13 +88,13 @@ const BASE: u16 = 0x7c00;
 
 #[no_mangle]
 extern "C" fn bootstrap_main(disk_number: u16) {
-    let load_addr: u32 = (BASE+512).into();
+    let load_addr: u32 = (BASE + 512).into();
     let mbr_offset: u64 = 1;
     let sectors = 1;
-    let partition_size = unsafe {core::ptr::read((BASE+494+12) as *const u8)} as u64; // TODO Support partition size of u64
+    let partition_size = unsafe { core::ptr::read((BASE + 446 + 12) as *const u8) } as u64; // TODO Support partition size of u64
     for s in 0..partition_size {
-        let addr = (load_addr as u64+s*512);
-        let start_lba = s+mbr_offset;
+        let addr = (load_addr as u64 + s * 512);
+        let start_lba = s + mbr_offset;
         let dap = DiskAddressPacket::from_lba(
             start_lba,
             sectors,
@@ -104,11 +105,15 @@ extern "C" fn bootstrap_main(disk_number: u16) {
             dap.perform_load(disk_number);
         }
         // If we want to debug read sectors
-        // chr_print(start_lba as u8+b'0'); 
+        // chr_print(start_lba as u8+b'0');
     }
     // read_disk(disk_number, LBAReadPacket::new(1, 0, load_address));
     print("Bootstrapper...\r\n"); // QEMU seems to need \r + \n to do a proper new line ?
-    unsafe { core::arch::asm!("jmp {:e}", in(reg) load_addr) }
+
+    let entry_point: extern "C" fn(disk_number: u16) =
+        unsafe { core::mem::transmute(load_addr as *const ()) };
+    (entry_point)(disk_number);
+
     loop {}
 }
 

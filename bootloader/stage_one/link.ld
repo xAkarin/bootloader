@@ -1,23 +1,23 @@
-ENTRY(__asm_first_stage_entry)
+ENTRY(stage_one_main)
 
 SECTIONS {
     . = 0x7e00; 
 
-    .stage1_asm : {
-        *(.stage1_asm .stage1_asm.*)
+    .stage1_entry : {
+        *(.stage1_entry .stage1_entry.*)
    } 
-    .rust :
-    {
-        *(.text .text.*)
-        *(.rodata .rodata.*)
-    }
-
-    /DISCARD/ : {
-        *(.comment .comment.*)    
-    }
-
-   /DISCARD/ : 
+   .rust :
    {
+       *(.text .text.*)
+           *(.rodata .rodata.*)
+}
+
+/DISCARD/ : {
+    *(.comment .comment.*)    
+}
+
+/DISCARD/ : 
+{
     *(.comment .comment.*)
    }
 
