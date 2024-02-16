@@ -1,0 +1,2 @@
+[build]
+target = "../x86_16bit.json"

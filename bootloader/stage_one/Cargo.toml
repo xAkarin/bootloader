@@ -4,6 +4,8 @@ name = "stage_one"
 version = "0.1.0"
 edition = "2021"
 
+[dependencies]
+common = {path = "../common"}
 
 [profile.stage1]
 inherits = "dev"
