@@ -1,5 +1,6 @@
 #![no_std]
 #![no_main]
+#![cfg_attr(debug_assertions, allow(unused, dead_code))]
 
 use core::arch::{asm, global_asm};
 

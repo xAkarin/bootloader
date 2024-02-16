@@ -1,39 +1,52 @@
 use booter::*;
 
-const TARGET: &str = "target.json"; 
-const BOOTSTRAP_DIR: &str = "../bootloader/bootstrap";
-const COMPILED_BOOTSTRAP_LOC: &str = "target/target/bootstrap/bootstrap.bin"; 
-const STAGE_ONE_DIR: &str = "../bootloader/stage_one";
-const COMPILED_STAGE_ONE_LOC: &str = "target/target/stage1/stage_one.bin"; 
+pub fn get_bootstrap() -> String {
+    format!("{BOOTSTRAP_DIR}/target/{BOOTSTRAP_TARGET}/{BOOTSTRAP_PROFILE}/bootstrap")
+}
 
+const BOOTSTRAP_DIR: &str = "../bootloader/bootstrap";
+const BOOTSTRAP_TARGET: &str = "bootstrap";
+const BOOTSTRAP_PROFILE: &str = "bootstrap";
+
+const STAGE_ONE_DIR: &str = "../bootloader/stage_one";
+const STAGE_1_TARGET: &str = "stage_1";
+const STAGE_1_PROFILE: &str = "stage1";
+pub fn get_stage_1() -> String {
+    format!("{STAGE_ONE_DIR}/target/{STAGE_1_TARGET}/{STAGE_1_PROFILE}/stage_one")
+}
+
+const COMPILED_BOOTLOADER_LOC: &str = "target/disk.bin";
 
 // TODO: clean build up!
 fn main() {
-    exec_cmd_wait(format!("cargo build --profile bootstrap --target {}", TARGET)
-                  .as_str(), 
-                  format!("{}", BOOTSTRAP_DIR)
-                  .as_str())
-        .expect("Failed to compile the first stage");
+    crate::cmd!(
+        panic = "Failed building bootstrapper",
+        dir = BOOTSTRAP_DIR,
+        "cargo build --profile {BOOTSTRAP_PROFILE} --target {BOOTSTRAP_TARGET}.json",
+    );
 
+    crate::cmd!(
+        panic = "Failed building first stage",
+        dir = STAGE_ONE_DIR,
+        "cargo build --profile {STAGE_1_PROFILE} --target {STAGE_1_TARGET}.json",
+    );
 
-    exec_cmd_wait(format!("cargo build --profile stage1 --target {}", TARGET)
-                  .as_str(), 
-                  format!("{}", STAGE_ONE_DIR)
-                  .as_str())
-        .expect("[!] Failed to compile the first stage");
-
-    println!("[?] Creating bootable image...");
-
-    remove_elf_16("target/target/bootstrap/bootstrap" , "target/target/bootstrap/bootstrap.bin", BOOTSTRAP_DIR);
-
-    ensure_size_512(format!("{}/{}", BOOTSTRAP_DIR, COMPILED_BOOTSTRAP_LOC).as_str());
-
-    remove_elf_16("target/target/stage1/stage_one", "target/target/stage1/stage_one.bin", STAGE_ONE_DIR);
-
-    print_size_in_bytes(format!("{}/{}", STAGE_ONE_DIR, COMPILED_STAGE_ONE_LOC).as_str()); 
+    println!("\t[?] Creating bootable image...");
+    let raw_bootstrap = remove_elf_16(
+        get_bootstrap(),
+    );
+    ensure_size_512(&raw_bootstrap);
     
-    // TODO: clean this function up and make it concat the files to a specific directory 
-    append_file(format!("{}/{}", STAGE_ONE_DIR, COMPILED_STAGE_ONE_LOC).as_str(), 
-                format!("{}/{}", BOOTSTRAP_DIR, COMPILED_BOOTSTRAP_LOC).as_str()); 
-    
+    let raw_stage_1 = remove_elf_16(
+        get_stage_1(),
+    );
+    print_size_in_bytes(&raw_stage_1);
+
+    append_file(
+        &raw_bootstrap,
+        &raw_stage_1,
+        COMPILED_BOOTLOADER_LOC,
+    );
+
+    cmd!("qemu-system-x86_64 -drive file={},format=raw", COMPILED_BOOTLOADER_LOC);
 }

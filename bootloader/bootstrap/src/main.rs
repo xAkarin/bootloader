@@ -1,5 +1,8 @@
 #![no_std]
 #![no_main]
+// Useless because in release mode
+// #![cfg_attr(debug_assertions, allow(unused, dead_code))]
+#![allow(unused, dead_code)]
 
 use core::arch::{asm, global_asm};
 
@@ -76,18 +79,21 @@ extern "C" fn bootstrap_main(disk_number: u16) {
     let internal_disk_number = disk_number;
     // where we load the first stage to 
     let load_address = 0x7e00;
-
-
-
-
+    print("Working!")
 }
 
-fn bprint(){
+#[inline(always)]
+fn chr_print(chr:u8){
     unsafe{
         asm!("mov ah, 0x0e",
-             "mov al, 'a'",
-             "int 0x10"
+             "mov al, {}",
+             "int 0x10", in(reg_byte) chr
             );
+    }
+}
+fn print(s: &str){
+    for c in s.chars() {
+        chr_print(c as u8)
     }
 }
 
@@ -135,6 +141,6 @@ fn read_disk(disk_number: u16, packet: LBAReadPacket) {
 #[panic_handler]
 pub fn panic(_: &core::panic::PanicInfo) -> ! {
     loop {
-        bprint(); 
+        print("PANIC!"); 
     }
 }
