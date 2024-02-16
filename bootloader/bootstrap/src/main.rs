@@ -9,32 +9,23 @@ use disk::*;
 
 use core::arch::{asm, global_asm};
 
-global_asm!{r#"
+global_asm! {r#"
     .section .asm, "awx"
     .global __asm_entry
     .code16
 
     __asm_entry:
     /*
-     *  This ensures that the code segment is set to zero. 
-     *
-     *  We aren't sure if the bios jumped to
-     *  0x7c00:0x0000 or 0x0000:0x7c00 so this is important.  
-     * */
-        ljmp $0, $__asm_fix_cs
-
-    __asm_fix_cs: 
-    /*
      * Here we zero all of the segment registers so that their value is known to us. 
      * This is important as we may need to do some memory addressing with the segments and
      * if we do not know their value we cannot accurately memory address!
      * */
-        xor %ax, %ax
-        mov %ax, %ds
-        mov %ax, %es
-        mov %ax, %ss
-        mov %ax, %fs
-        mov %ax, %gs
+        xor ax, ax
+        mov ds, ax
+        mov es, ax
+        mov ss, ax
+        mov fs, ax
+        mov gs, ax
 
     /*
      * Here we set the stack pointer to the where our bootstrap was loaded in at. 
@@ -42,67 +33,95 @@ global_asm!{r#"
      * this is not the case. The stack grows downwards, so by setting our stack pointer here
      * we have large enough room for a stack underneath our bootloader
      * */
-        mov $0x7c00, %sp
+        mov sp, 0x7c00
 
     /*
      * Move the base pointer to the same memory address the stack pointer is at. TODO: unsure if
      * this is needed
      * */
-        mov %sp, %bp
+        mov bp, sp
 
     /*
      * Clear the direction flag so we are moving forward in memory when dealing with strings!
      * */
         cld
 
+    enable_a20:
+        # enable A20-Line via IO-Port 92, might not work on all motherboards
+        in al, 0x92
+        test al, 2
+        jnz enable_a20_after
+        or al, 2
+        and al, 0xFE
+        out 0x92, al
+    enable_a20_after:
+
+
     __check_13h_extensions:
-        mov $0x41, %ah
-        mov $0x55aa, %bx
-        int $0x13
+        mov ah, 0x41
+        mov bx, 0x55aa
+        int 0x13
         jc spin 
 
     __asm_rust_entry:
-        push %dx
+        push dx
         call bootstrap_main
 
     disk_error:
-    mov $0x0e, %ah
-    mov $'d', %al
-    int $0x10
+        mov ah, 0x0e
+        mov al, 'd'
+        int 0x10
 
 
     spin:
-    mov $0x0e, %ah
-    mov $'s', %al
-    int $0x10
-    hlt
-    hlt
-    jmp spin
-
-    "#, 
-    options(att_syntax)
+        mov ah, 0x0e
+        mov al, 's'
+        int 0x10
+        hlt
+        hlt
+        jmp spin
+    "#,
 }
 
+const BASE: u16 = 0x7c00;
 
 #[no_mangle]
 extern "C" fn bootstrap_main(disk_number: u16) {
-    chr_print(disk_number as u8);
-    let load_address = 0x7c00 + 512;
-    read_disk(disk_number, LBAReadPacket::new(1, 0, load_address));
-    print("Working!");
-    unsafe {core::arch::asm!("jmp {:e}", in(reg) load_address)}
+    let load_addr: u32 = (BASE+512).into();
+    let mbr_offset: u64 = 1;
+    let sectors = 1;
+    let partition_size = unsafe {core::ptr::read((BASE+494+12) as *const u8)} as u64; // TODO Support partition size of u64
+    for s in 0..partition_size {
+        let addr = (load_addr as u64+s*512);
+        let start_lba = s+mbr_offset;
+        let dap = DiskAddressPacket::from_lba(
+            start_lba,
+            sectors,
+            (addr & 0b1111) as u16,
+            (addr >> 4) as u16,
+        );
+        unsafe {
+            dap.perform_load(disk_number);
+        }
+        // If we want to debug read sectors
+        // chr_print(start_lba as u8+b'0'); 
+    }
+    // read_disk(disk_number, LBAReadPacket::new(1, 0, load_address));
+    print("Bootstrapper...\r\n"); // QEMU seems to need \r + \n to do a proper new line ?
+    unsafe { core::arch::asm!("jmp {:e}", in(reg) load_addr) }
+    loop {}
 }
 
 #[inline(always)]
-fn chr_print(chr:u8){
-    unsafe{
+fn chr_print(chr: u8) {
+    unsafe {
         asm!("mov ah, 0x0e",
-             "mov al, {}",
-             "int 0x10", in(reg_byte) chr
-            );
+        //  "mov al, {}",
+         "int 0x10", in("al") chr
+        );
     }
 }
-fn print(s: &str){
+fn print(s: &str) {
     for c in s.chars() {
         chr_print(c as u8)
     }
@@ -112,7 +131,6 @@ fn print(s: &str){
 #[cfg(not(test))]
 #[panic_handler]
 pub fn panic(_: &core::panic::PanicInfo) -> ! {
-    print("PANIC!"); 
-    loop {
-    }
+    print("PANIC!");
+    loop {}
 }

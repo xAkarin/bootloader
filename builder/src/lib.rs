@@ -1,6 +1,6 @@
 use std::{
-    io::{Read, Write},
-    os::unix::fs::MetadataExt,
+    io::{self, Read, Write},
+    os::unix::fs::{FileExt as _, MetadataExt},
 };
 
 pub mod command;
@@ -32,14 +32,14 @@ pub fn ensure_size_512(file_name: &str) {
         panic!("[!] the size of {} is greater than 512 bytes!", file_name);
     }
 
-    println!("The size of {} is {}", file_name, size);
+    // println!("The size of {} is {}", file_name, size);
 }
 
-pub fn print_size_in_bytes(file_name: &str) {
+/// Gets the size in bytes
+pub fn get_size(file_name: &str) -> u64 {
     let file = std::fs::File::open(file_name)
         .expect(format!("Failed to open file: {}", file_name).as_str());
-    let size = file.metadata().unwrap().size();
-    println!("The size of {} is {}", file_name, size);
+    file.metadata().unwrap().size()
 }
 
 pub fn append_file(file1: &str, file2: &str, dest: &str) {
@@ -67,6 +67,21 @@ pub fn append_file(file1: &str, file2: &str, dest: &str) {
     dest_
         .write(&buffer)
         .expect(format!("Failed to write to the destination: {} !", dest).as_str());
+}
+
+pub fn setup_partition_size(file: String, partition_size: u64) -> Result<(), io::Error> {
+    let f = std::fs::OpenOptions::new()
+        .read(true)
+        .write(true)
+        .open(file)
+        ?;
+    let mut partition = [0; 16];
+    f.read_at(&mut partition, 446+16*3)?;
+    // https://wiki.osdev.org/MBR_(x86)#Partition_table_entry_format
+    partition[8] = 1;
+    partition[0xC] = (partition_size/512) as u8;
+    f.write_at(&partition, 446+16*3)?;
+    Ok(())
 }
 
 /// https://users.rust-lang.org/t/concatenate-const-strings/51712/4

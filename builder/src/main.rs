@@ -32,22 +32,23 @@ fn main() {
     );
 
     println!("\t[?] Creating bootable image...");
-    let raw_bootstrap = remove_elf_16(
-        get_bootstrap(),
-    );
+    let raw_bootstrap = remove_elf_16(get_bootstrap());
     ensure_size_512(&raw_bootstrap);
+
+    let raw_stage_1 = remove_elf_16(get_stage_1());
+    let size = get_size(&raw_stage_1);
+    println!("Stage 1 is {size} bytes");
+
+    append_file(&raw_bootstrap, &raw_stage_1, COMPILED_BOOTLOADER_LOC);
     
-    let raw_stage_1 = remove_elf_16(
-        get_stage_1(),
-    );
-    print_size_in_bytes(&raw_stage_1);
+    setup_partition_size(COMPILED_BOOTLOADER_LOC.to_string(), size).expect("Failed opening compiled bootloader to set the partition size");
 
-    append_file(
-        &raw_bootstrap,
-        &raw_stage_1,
-        COMPILED_BOOTLOADER_LOC,
+    let user_args = std::env::args()
+        .skip(1)
+        .map(|a| format!("{a} "))
+        .collect::<String>();
+    cmd!(
+        "qemu-system-x86_64 -drive file={},format=raw {user_args}",
+        COMPILED_BOOTLOADER_LOC
     );
-
-    let user_args = std::env::args().skip(1).map(|a| format!("{a} ")).collect::<String>();
-    cmd!("qemu-system-x86_64 -drive file={},format=raw {user_args}", COMPILED_BOOTLOADER_LOC);
 }
