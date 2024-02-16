@@ -17,7 +17,15 @@ SECTIONS {
         *(.comment .comment.*)    
     }
 
-    . = 0x7c00 + 510;
+    . = 0x7c00 + 510-16;
+
+    _partition_table = .;
+    .partition_table :
+    {
+        /* partition table entry 4 */
+        QUAD(0)
+        QUAD(0)
+    }
 
     .magic_word : {
         SHORT(0xaa55)

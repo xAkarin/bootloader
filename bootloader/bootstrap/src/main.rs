@@ -83,19 +83,28 @@ global_asm! {r#"
     "#,
 }
 
+const BASE: u16 = 0x7c00;
+
 #[no_mangle]
 extern "C" fn bootstrap_main(disk_number: u16) {
-    let load_addr = 0x7e00;
-    let start_lba = 1;
+    let load_addr: u32 = (BASE+512).into();
+    let mbr_offset: u64 = 1;
     let sectors = 1;
-    let dap = DiskAddressPacket::from_lba(
-        start_lba,
-        sectors,
-        (load_addr & 0b1111) as u16,
-        (load_addr >> 4) as u16,
-    );
-    unsafe {
-        dap.perform_load(disk_number);
+    let partition_size = unsafe {core::ptr::read((BASE+494+12) as *const u8)} as u64; // TODO Support partition size of u64
+    for s in 0..partition_size {
+        let addr = (load_addr as u64+s*512);
+        let start_lba = s+mbr_offset;
+        let dap = DiskAddressPacket::from_lba(
+            start_lba,
+            sectors,
+            (addr & 0b1111) as u16,
+            (addr >> 4) as u16,
+        );
+        unsafe {
+            dap.perform_load(disk_number);
+        }
+        // If we want to debug read sectors
+        // chr_print(start_lba as u8+b'0'); 
     }
     // read_disk(disk_number, LBAReadPacket::new(1, 0, load_address));
     print("Bootstrapper...\r\n"); // QEMU seems to need \r + \n to do a proper new line ?
@@ -107,8 +116,8 @@ extern "C" fn bootstrap_main(disk_number: u16) {
 fn chr_print(chr: u8) {
     unsafe {
         asm!("mov ah, 0x0e",
-         "mov al, {}",
-         "int 0x10", in(reg_byte) chr
+        //  "mov al, {}",
+         "int 0x10", in("al") chr
         );
     }
 }

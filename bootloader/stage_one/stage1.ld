@@ -6,12 +6,15 @@ SECTIONS {
     .stage1_asm : {
         *(.stage1_asm .stage1_asm.*)
    } 
-   .rust : {
+    .rust :
+    {
         *(.text .text.*)
         *(.rodata .rodata.*)
-        *(.bss .bss.*)
-        *(.data .data.*)
-   }
+    }
+
+    /DISCARD/ : {
+        *(.comment .comment.*)    
+    }
 
    /DISCARD/ : 
    {

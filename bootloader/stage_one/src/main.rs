@@ -4,7 +4,7 @@
 
 use core::arch::{asm, global_asm};
 
-global_asm!{r#"
+global_asm! {r#"
     /*
      * Boiler plate assembly at the start of the program to ensure it jumps to the correct function
      * Kinda useless but enlightens my anxiety doing bootloader dev'ing
@@ -19,18 +19,11 @@ global_asm!{r#"
 }
 
 #[no_mangle]
-extern "C" fn stage_one_main(){
-    print("Stage 1 s");
-    chr_print(b'S');
-    chr_print(b't');
-    chr_print(b'a');
-    chr_print(b'g');
-    chr_print(b'e');
-    chr_print(b' ');
-    chr_print(b'1');
-    // loop {}
+extern "C" fn stage_one_main() {
+    print("Stage 1...\r\n");
+    print("Stage 1 lorem...\r\n");
+    loop {}
 }
-
 
 #[inline(always)]
 fn chr_print(chr: u8) {
@@ -46,8 +39,6 @@ fn print(s: &str) {
         chr_print(c as u8)
     }
 }
-
-
 
 #[panic_handler]
 fn panic(_: &core::panic::PanicInfo) -> ! {
