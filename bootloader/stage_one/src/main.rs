@@ -47,8 +47,8 @@ extern "C" fn stage_one_main(disk_number: u16) {
     let load_addr = BASE + 2048 + 512 + 512;
     let partition_size = unsafe { core::ptr::read((BASE + 446 + 16 + 12) as *const u8) } as u64; // TODO Support partition size of u64
     let partition_offset = unsafe { core::ptr::read((BASE + 446 + 16 + 8) as *const u8) } as u64; // TODO Support partition size of u64
-    chr_print(partition_size as u8 + b'0');
-    chr_print(partition_offset as u8 + b'0');
+    // chr_print(partition_size as u8 + b'0');
+    // chr_print(partition_offset as u8 + b'0');
     for s in 0..partition_size {
         let addr = (load_addr as u64 + s * 512);
         let start_lba = s + partition_offset;
