@@ -31,3 +31,5 @@ Currently it doesn't even support booting, but we will implement:
 - Check presence of CPU features (NX, SMEP, x87, PCID, global pages, TCE, WP, MMX, SSE, SYSCALL), and enable them
 - Assign a PAT to write combining (?? Smth about paging)
 - Setup FS/GS base ([SwapGS -> FS&GS](https://wiki.osdev.org/SWAPGS#FS_and_GS) and [x86 Registers](https://wiki.osdev.org/CPU_Registers_x86-64#FS.base.2C_GS.base))
+- Setup PS/2 controller
+
