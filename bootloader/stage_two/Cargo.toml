@@ -1,8 +1,9 @@
 cargo-features = ["per-package-target"]
 [package]
-name = "stage_one"
+name = "stage_two"
 version = "0.1.0"
 edition = "2021"
+
 
 [profile.dev]
 strip = true
