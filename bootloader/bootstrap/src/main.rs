@@ -1,131 +1,136 @@
 #![no_std]
 #![no_main]
+// Useless because in release mode
+// #![cfg_attr(debug_assertions, allow(unused, dead_code))]
 #![allow(unused, dead_code)]
 
-use core::arch::global_asm;
+mod disk;
+use disk::*;
 
-global_asm!{r#"
-    .code16
-    .section asm, "awx"
+use core::arch::{asm, global_asm};
+
+global_asm! {r#"
+    .section .asm, "awx"
     .global __asm_entry
+    .code16
 
-    __asm_entry: 
-    mov 0x0e, %ah
-    mov $'g', %al
-    int $0x10
+    __asm_entry:
+    /*
+     * Here we zero all of the segment registers so that their value is known to us. 
+     * This is important as we may need to do some memory addressing with the segments and
+     * if we do not know their value we cannot accurately memory address!
+     * */
+        xor ax, ax
+        mov ds, ax
+        mov es, ax
+        mov ss, ax
+        mov fs, ax
+        mov gs, ax
+
+    /*
+     * Here we set the stack pointer to the where our bootstrap was loaded in at. 
+     * This can cause some confusion as it is a common misconception that the stack grows upwards,
+     * this is not the case. The stack grows downwards, so by setting our stack pointer here
+     * we have large enough room for a stack underneath our bootloader
+     * */
+        mov sp, 0x7c00
+
+    /*
+     * Move the base pointer to the same memory address the stack pointer is at. TODO: unsure if
+     * this is needed
+     * */
+        mov bp, sp
+
+    /*
+     * Clear the direction flag so we are moving forward in memory when dealing with strings!
+     * */
+        cld
+
+    enable_a20:
+        # enable A20-Line via IO-Port 92, might not work on all motherboards
+        in al, 0x92
+        test al, 2
+        jnz enable_a20_after
+        or al, 2
+        and al, 0xFE
+        out 0x92, al
+    enable_a20_after:
+
+
+    __check_13h_extensions:
+        mov ah, 0x41
+        mov bx, 0x55aa
+        int 0x13
+        jc spin 
+
+    __asm_rust_entry:
+        push dx
+        call bootstrap_main
+
+    disk_error:
+        mov ah, 0x0e
+        mov al, 'd'
+        int 0x10
+
 
     spin:
-    mov 0x0e, %ah
-    mov $'g', %al
-    int $0x10
-    jmp spin 
+        mov ah, 0x0e
+        mov al, 's'
+        int 0x10
+        hlt
+        hlt
+        jmp spin
+    "#,
+}
 
-"#, options(att_syntax)}
+const BASE: u16 = 0x7c00;
 
+#[no_mangle]
+extern "C" fn bootstrap_main(disk_number: u16) {
+    let load_addr: u32 = (BASE+512).into();
+    let mbr_offset: u64 = 1;
+    let sectors = 1;
+    let partition_size = unsafe {core::ptr::read((BASE+494+12) as *const u8)} as u64; // TODO Support partition size of u64
+    for s in 0..partition_size {
+        let addr = (load_addr as u64+s*512);
+        let start_lba = s+mbr_offset;
+        let dap = DiskAddressPacket::from_lba(
+            start_lba,
+            sectors,
+            (addr & 0b1111) as u16,
+            (addr >> 4) as u16,
+        );
+        unsafe {
+            dap.perform_load(disk_number);
+        }
+        // If we want to debug read sectors
+        // chr_print(start_lba as u8+b'0'); 
+    }
+    // read_disk(disk_number, LBAReadPacket::new(1, 0, load_address));
+    print("Bootstrapper...\r\n"); // QEMU seems to need \r + \n to do a proper new line ?
+    unsafe { core::arch::asm!("jmp {:e}", in(reg) load_addr) }
+    loop {}
+}
 
+#[inline(always)]
+fn chr_print(chr: u8) {
+    unsafe {
+        asm!("mov ah, 0x0e",
+        //  "mov al, {}",
+         "int 0x10", in("al") chr
+        );
+    }
+}
+fn print(s: &str) {
+    for c in s.chars() {
+        chr_print(c as u8)
+    }
+}
 
-
-
-
-
-
-
-//const ENTRY_POINT_ADDR: u16 = 0x7c00;
-//const SECOND_STAGE_ADDR: u32 = (ENTRY_POINT_ADDR as u32+0x1000); // Adds a bit of padding 
-// TODO Adjust sector step.
-//const SECTOR_STEP: u16 = 1;
-//const MAX_SECTORS: u32 = u16::MAX as u32;
-
-//#[no_mangle]
-//pub extern "C" fn first_stage(disk_number: u16) {
-//    write_v8(&[b'S', b't', b'a', b'g', b'e', b' ', b'1'], 0);
-//  let mut sector_number: u32 = 1;
-//   let mut buffer_addr = SECOND_STAGE_ADDR;
-//    loop {
-//        let n = ((sector_number&0xFF) as u8);
-//        write_v8(&[b'B',n+b'0'], 160*n as usize);
-//        // write_v8(&[b'0'+n], 160);
-//        read_disk(disk_number, LBAReadPacket::new(SECTOR_STEP, buffer_addr, sector_number as u64).unwrap());
-//        write_v8(&[b'D'], 160*n as usize+4);
-//        let buffer = unsafe{core::slice::from_raw_parts(buffer_addr as *const u16, 256)};
-//        if *buffer.last().unwrap() == 0xdead {
-//            break;
-//        }
-//        // write_v8(&[b'D'], 160*n as usize);
-//        
-//        //TODO Investigate why this line breaks everything ?
-//        // write_v8(&[b'0'+sector_number as u8], (sector_number as usize)*160);
-//        // write_v8(&[n], 320);
-//        buffer_addr += SECTOR_STEP as u32*512;
-//        sector_number += SECTOR_STEP as u32;
-//    }
-//    write_v8(&[b'F'], 0);
-//    unsafe{core::arch::asm!("call {addr:e}", addr=in(reg) buffer_addr)};
-//    write_v8(&[b'P'], 0);
-//    loop {} // Could use unreachable! but it adds the unwrap text, which takes quite a lot of space !
-//}
-
-//#[repr(C, packed)]
-//struct LBAReadPacket {
-    /// where the size of the packet is stored
-    /// OSDev is a bit missleading, this is where a number describing the size of the packet is, so 16 bytes
-//    size: u8,
-    /// Always zero 
-//    _zero: u8,
-    /// max 127 on some BIOSes
-//    n_sectors: u16,
-    /// 16 bit segment:16 bit offset
-//    transfer_buffer: u32,
-//    low_lba: u32,
-    /// upper 16-bits of 48-bit starting LBA
-//   hig_16bit_start_lba: u32,
-//}
-//impl LBAReadPacket {
-//    pub fn new(sectors: u16, addr: u32, lba: u64) -> Option<Self> {
-//        if lba >= 2 ^ 48 {
-//            return None;
-//        }
-//        Some(Self {
-//            size: core::mem::size_of::<Self>() as u8,
-//            _zero: 0,
-//            n_sectors: sectors,
-//            transfer_buffer: addr,
-//            low_lba: (lba & u32::MAX as u64) as u32,
-//            hig_16bit_start_lba: (lba >> 32) as u32,
-//        })
-//    }
-//}
-/// If the disk drive itself does not support LBA addressing, the BIOS will automatically convert the LBA to a CHS address for you -- so this function still works.
-//fn read_disk(disk_number: u16, packet: LBAReadPacket) {
-//    let packet_addr = (&packet as *const LBAReadPacket) as u16;
-//    let mut a = 0;
-//    unsafe {
-//        core::arch::asm!(
-//           "push 0x7a", // error code `z`, passed to `fail` on error
-//            "mov {1:x}, si", // backup the `si` register, whose contents are required by LLVM
-//            "mov si, {0:x}",
-//            "int 0x13",
-//            "jc spin",
-//            "pop si", // remove error code again
-//            "mov si, {1:x}", // restore the `si` register to its prior state
-//            in(reg) packet_addr,
-//            out(reg) a,
-//            in("ax") 0x4200u16,
-//            in("dx") disk_number,        
-//        );
-//    }
-//}
-//fn write_v8(s: &[u8], offset: usize) {
-//    let vga_buffer = unsafe { core::slice::from_raw_parts_mut(0xb8000 as *mut u8, 80 * 25 * 2) };
-//    for (i, char) in s.iter().enumerate() {
-//        vga_buffer[i * 2 + offset] = *char as u8;
-//        vga_buffer[i * 2 + offset+1] = 0x0F;
-//    }
-//}
-
-/// cfg not test gets rid of an error
+// cfg not test gets rid of an error
 #[cfg(not(test))]
 #[panic_handler]
 pub fn panic(_: &core::panic::PanicInfo) -> ! {
+    print("PANIC!");
     loop {}
 }

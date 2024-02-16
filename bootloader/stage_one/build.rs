@@ -4,6 +4,6 @@ fn main() {
 
     println!(
         "cargo:rustc-link-arg-bins=--script={}",
-        root.join("stage-2.ld").display()
+        root.join("stage1.ld").display()
     );
 }
