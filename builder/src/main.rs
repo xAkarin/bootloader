@@ -27,6 +27,7 @@ impl Profile {
 
 // TODO: clean build up!
 fn main() {
+    println!("\t[?] Building stages...");
     let mut stages = std::fs::read_dir("../bootloader")
         .unwrap()
         .map(|f| f.unwrap().file_name().to_string_lossy().to_string())
@@ -63,6 +64,8 @@ fn main() {
         sector_offset += size.div_ceil(512);
     }
 
+    let size = get_size(&COMPILED_BOOTLOADER_LOC);
+    println!("{COMPILED_BOOTLOADER_LOC} is {size} bytes ({} sectors)", size.div_ceil(512));
     let user_args = std::env::args()
         .skip(1)
         .map(|a| format!("{a} "))

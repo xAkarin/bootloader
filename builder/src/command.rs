@@ -2,13 +2,14 @@ use std::process::{Command, ExitStatus};
 
 
 pub fn command(rargs: String, with_command: impl Fn(&mut Command)) -> ExitStatus {
+    // print!("\"{rargs}\"...\r");
     let mut args = rargs.split_ascii_whitespace();
     let program = args.next().unwrap();
     let mut cmd = Command::new(program);
     for arg in args {// TODO Use args
         cmd.arg(arg);
     }
-    cmd.stdout(std::process::Stdio::piped());
+    // cmd.stdout(std::process::Stdio::piped());
     (with_command)(&mut cmd);
     let status = cmd
         .spawn()
@@ -21,8 +22,6 @@ pub fn command(rargs: String, with_command: impl Fn(&mut Command)) -> ExitStatus
         println!("{}", marker);
         println!("{msg}");
         println!("{}", marker);
-    } else {
-        println!("✅ \"{rargs}\"")
     }
     status
 }

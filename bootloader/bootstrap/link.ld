@@ -22,7 +22,7 @@ SECTIONS {
     _partition_table = .;
     .partition_table :
     {
-        /* partition table entries */
+        /* partition table entries, they get replaced at compile time, see ../../builder/src/lib.rs > setup_partition_size */
         QUAD(0)
         QUAD(0)
 

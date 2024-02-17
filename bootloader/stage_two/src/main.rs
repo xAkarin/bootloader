@@ -12,7 +12,6 @@ global_asm! {r#"
      * */
     .code32
     .global __asm_second_stage_entry
-    .section .stage2_asm, "awx"
 
     spin:
         jmp spin
