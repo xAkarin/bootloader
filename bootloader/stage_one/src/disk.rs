@@ -1,5 +1,24 @@
 use core::arch::asm;
 
+
+core::arch::global_asm! {r#"
+    disk_error:
+        mov ah, 0x0e
+        mov al, 'd'
+        int 0x10
+
+    spin:
+        mov ah, 0x0e
+        mov al, 's'
+        int 0x10
+        hlt
+        hlt
+        jmp spin
+
+     "#,
+}
+
+
 #[repr(C, packed)]
 #[allow(dead_code)] // the structure format is defined by the hardware
 pub struct DiskAddressPacket {

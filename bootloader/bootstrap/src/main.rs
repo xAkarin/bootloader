@@ -118,7 +118,7 @@ extern "C" fn bootstrap_main(disk_number: u16) {
     unsafe { core::arch::asm!("
     mov dx, {disk:x}
     push dx
-    jmp {addr:e}
+    call {addr:e} // Idk why but we need to use call instead of jmp
     ", disk=in(reg) disk_number, addr=in(reg) load_addr) }
     loop {}
 }

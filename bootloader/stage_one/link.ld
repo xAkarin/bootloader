@@ -1,11 +1,11 @@
-ENTRY(__asm_first_stage_entry)
+ENTRY(_start)
 
 SECTIONS {
-    . = 0x7e00; 
+    . = 0x7c00+512;
 
-    .stage1_asm : {
-        *(.stage1_asm .stage1_asm.*)
-   } 
+    .start : {
+        *(.start)
+    }
     .rust :
     {
         *(.text .text.*)
@@ -13,7 +13,7 @@ SECTIONS {
     }
 
     /DISCARD/ : {
-        *(.comment .comment.*)    
+        *(.comment .comment.*)
     }
 
    /DISCARD/ : 

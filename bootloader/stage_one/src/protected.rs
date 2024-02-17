@@ -1,8 +1,33 @@
-// / Enters unreal mode: https://wiki.osdev.org/Unreal_Mode
-// pub fn enter_unreal() {
-
-// }
 use core::arch::asm;
+
+// / Enters unreal mode: https://wiki.osdev.org/Unreal_Mode
+pub fn enter_unreal_mode() {
+    // let ds: u16;
+    // let ss: u16;
+    // unsafe {
+    //     asm!("mov {0:x}, ds", out(reg) ds, options(nomem, nostack, preserves_flags));
+    //     asm!("mov {0:x}, ss", out(reg) ss, options(nomem, nostack, preserves_flags));
+    // }
+    // unsafe {asm!("cli")}
+    // GDT.load();
+
+    // // set protected mode bit
+    // let cr0 = set_protected_mode_bit();
+
+    // // load GDT
+    // unsafe {
+    //     asm!("mov {0}, 0x10", "mov ds, {0}", "mov ss, {0}", out(reg) _);
+    // }
+
+    // // unset protected mode bit again
+    // write_cr0(cr0);
+
+    // unsafe {
+    //     asm!("mov ds, {0:x}", in(reg) ds, options(nostack, preserves_flags));
+    //     asm!("mov ss, {0:x}", in(reg) ss, options(nostack, preserves_flags));
+    //     asm!("sti");
+    // }
+}
 /// https://wiki.osdev.org/Protected_mode
 /// # Safety
 /// Ensure A20 line is enabled

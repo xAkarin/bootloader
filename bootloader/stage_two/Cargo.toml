@@ -4,6 +4,8 @@ name = "stage_two"
 version = "0.1.0"
 edition = "2021"
 
+[dependencies]
+uart_16550 = "*"
 
 [profile.dev]
 strip = true

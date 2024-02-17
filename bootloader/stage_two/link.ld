@@ -1,11 +1,11 @@
-ENTRY(__asm_second_stage_entry)
+ENTRY(_start)
 
 SECTIONS {
     . = 0x00100000;
 
-    .stage2_asm : {
-        *(.stage2_asm .stage2_asm.*)
-   } 
+    .start : {
+        *(.start)
+    }
     .rust :
     {
         *(.text .text.*)

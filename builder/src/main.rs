@@ -52,7 +52,7 @@ fn main() {
         let exe = format!("../bootloader/{name}/target/target/{}/{name}", PROFILE.as_path());
         let raw = remove_elf_16(exe);
         let size = get_size(&raw);
-        println!("{name} is {size} bytes");
+        println!("{name} is {size} bytes ({} sectors) and at {} sectors from start", size.div_ceil(512), sector_offset);
         append_file(&COMPILED_BOOTLOADER_LOC, &raw, COMPILED_BOOTLOADER_LOC);
         setup_partition_size(
             COMPILED_BOOTLOADER_LOC.to_string(),

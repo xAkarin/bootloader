@@ -4,35 +4,6 @@
 
 use core::arch::{asm, global_asm};
 
-global_asm! {r#"
-    /*
-     * Boiler plate assembly at the start of the program to ensure it jumps to the correct function
-     * Kinda useless but enlightens my anxiety doing bootloader dev'ing
-     * TODO Remove the need for this
-     * */
-    .code16
-    .global __asm_first_stage_entry
-    .section .stage1_asm, "awx"
-        
-    __asm_first_stage_entry:
-        call stage_one_main
-        
-    disk_error:
-        mov ah, 0x0e
-        mov al, 'd'
-        int 0x10
-
-    spin:
-        mov ah, 0x0e
-        mov al, 's'
-        int 0x10
-        hlt
-        hlt
-        jmp spin
-
-     "#,
-}
-
 mod protected;
 use protected::*;
 mod disk;
@@ -41,13 +12,15 @@ use disk::*;
 const BASE: u16 = 0x7c00;
 
 #[no_mangle]
-extern "C" fn stage_one_main(disk_number: u16) {
+#[link_section = ".start"]
+pub extern "C" fn _start(disk_number: u16) {
     print("Stage 1...\r\n");
-    let load_addr = BASE + 2048 + 512 + 512;
+    // Currently not working cuz not in unreal mode
+    let load_addr = 0x00100000;
+    #[cfg(debug_assertions)]
+    print_partitions();
     let partition_size = unsafe { core::ptr::read((BASE + 446 + 16 + 12) as *const u8) } as u64; // TODO Support partition size of u64
     let partition_offset = unsafe { core::ptr::read((BASE + 446 + 16 + 8) as *const u8) } as u64; // TODO Support partition size of u64
-    chr_print(partition_size as u8 + b'0');
-    chr_print(partition_offset as u8 + b'0');
     for s in 0..partition_size {
         let addr = (load_addr as u64 + s * 512);
         let start_lba = s + partition_offset;
@@ -94,12 +67,24 @@ extern "C" fn stage_one_main(disk_number: u16) {
     loop {}
 }
 
+fn print_partitions() {
+    print("Partitions: \r\n");
+    for p in 0..4 {
+        let partition_size = unsafe { core::ptr::read((BASE + 446 + 16*p + 12) as *const u8) } as u64; // TODO Support partition size of u64
+        let partition_offset = unsafe { core::ptr::read((BASE + 446 + 16*p + 8) as *const u8) } as u64; // TODO Support partition size of u64
+        chr_print(b'-');
+        chr_print(partition_size as u8 + b'0');
+        chr_print(partition_offset as u8 + b'0');
+        chr_print(b'\r');
+        chr_print(b'\n');
+    }
+}
 #[inline(always)]
 fn chr_print(chr: u8) {
     unsafe {
-        asm!("mov ah, 0x0e",
-         "mov al, {}",
-         "int 0x10", in(reg_byte) chr
+        asm!("int 0x10", 
+             in("al") chr, 
+             in("ah") 0x0eu8
         );
     }
 }
@@ -111,5 +96,6 @@ fn print(s: &str) {
 
 #[panic_handler]
 fn panic(_: &core::panic::PanicInfo) -> ! {
+    print("PANIC");
     loop {}
 }
